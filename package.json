@@ -1,0 +1,19 @@
+{
+  "name": "snake-online",
+  "version": "1.0.0",
+  "description": "蛇蛇突擊 - 貪吃蛇線上多人遊戲（Node.js + Socket.io + Firebase）",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "firebase-admin": "^12.3.1",
+    "socket.io": "^4.7.5"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no" />
+<title>🐍 蛇蛇突擊</title>
+
+<!-- PWA：可以「加到主畫面」像 App 一樣安裝 -->
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#FF6B81" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="蛇蛇突擊" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<link rel="icon" href="icons/icon-192.png" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Baloo+2:wght@500;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- 背景裝飾 -->
+<div class="bg-blobs" aria-hidden="true">
+  <span class="blob blob-a"></span>
+  <span class="blob blob-b"></span>
+  <span class="blob blob-c"></span>
+</div>
+
+<!-- ===== 登入 / 註冊畫面 ===== -->
+<section id="screen-auth" class="screen active">
+  <div class="auth-card card">
+    <div class="mascot" aria-hidden="true">
+      <svg viewBox="0 0 160 160" class="mascot-svg">
+        <circle cx="80" cy="80" r="78" fill="var(--mint-soft)"/>
+        <path d="M40 100 Q40 60 70 55 Q100 50 100 75 Q100 95 80 95 Q65 95 65 82" fill="none" stroke="var(--coral)" stroke-width="16" stroke-linecap="round"/>
+        <circle cx="42" cy="98" r="15" fill="var(--coral)"/>
+        <circle cx="37" cy="93" r="3.2" fill="#2B3A3A"/>
+        <path d="M28 90 L20 86" stroke="#2B3A3A" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <h1 class="title">蛇蛇突擊</h1>
+    <p class="subtitle">貪吃蛇線上多人對戰</p>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="login">登入</button>
+      <button class="tab-btn" data-tab="register">註冊</button>
+    </div>
+
+    <form id="form-login" class="auth-form">
+      <input type="email" id="login-email" placeholder="電子信箱" required autocomplete="email" />
+      <input type="password" id="login-password" placeholder="密碼" required autocomplete="current-password" />
+      <button type="submit" class="btn btn-primary">登入遊玩</button>
+      <p class="form-error" id="login-error"></p>
+      <button type="button" id="btn-toggle-forgot" class="link-btn-small">忘記密碼？</button>
+    </form>
+
+    <form id="form-forgot" class="auth-form hidden">
+      <p class="hint">輸入註冊時用的電子信箱，我們會寄一封重設密碼的信給你。</p>
+      <input type="email" id="forgot-email" placeholder="電子信箱" required autocomplete="email" />
+      <button type="submit" class="btn btn-secondary">寄送重設密碼信</button>
+      <p class="form-error" id="forgot-error"></p>
+      <p class="form-success hidden" id="forgot-success">✅ 已經寄出重設密碼信，請去信箱收信（記得看一下垃圾郵件匣）。</p>
+      <button type="button" id="btn-back-to-login" class="link-btn-small">返回登入</button>
+    </form>
+
+    <form id="form-register" class="auth-form hidden">
+      <input type="text" id="register-name" placeholder="暱稱（會顯示在排行榜）" required maxlength="16" />
+      <input type="email" id="register-email" placeholder="電子信箱" required autocomplete="email" />
+      <input type="password" id="register-password" placeholder="密碼（至少 6 碼）" required minlength="6" autocomplete="new-password" />
+      <button type="submit" class="btn btn-primary">建立帳號</button>
+      <p class="form-error" id="register-error"></p>
+    </form>
+
+    <button id="btn-guest" class="btn btn-ghost">先用訪客身分試玩（不記錄排行榜）</button>
+
+    <div class="divider"><span>或</span></div>
+    <button id="btn-google" class="btn btn-google">
+      <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+        <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/>
+        <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 16 19 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6 29.6 4 24 4c-7.4 0-13.8 4.2-17.7 10.7z"/>
+        <path fill="#4CAF50" d="M24 44c5.5 0 10.4-1.9 14.2-5.1l-6.6-5.6C29.6 35.1 27 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.6 5.1C9.9 39.7 16.4 44 24 44z"/>
+        <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.2 4.2-4.1 5.6l6.6 5.6C41.5 36.2 44 30.6 44 24c0-1.3-.1-2.7-.4-3.5z"/>
+      </svg>
+      使用 Google 登入
+    </button>
+  </div>
+</section>
+
+<!-- ===== 大廳畫面 ===== -->
+<section id="screen-lobby" class="screen">
+  <header class="topbar">
+    <div class="brand"><span class="brand-emoji">🐍</span> 蛇蛇突擊</div>
+    <div class="user-chip">
+      <button id="btn-mute-lobby" class="icon-btn" title="靜音">🔊</button>
+      <button id="btn-open-tutorial" class="icon-btn" title="怎麼玩">❓</button>
+      <span id="lobby-username">玩家</span>
+      <button id="btn-logout" class="link-btn">登出</button>
+    </div>
+  </header>
+
+  <div id="verify-email-banner" class="verify-email-banner hidden">
+    📧 你的信箱還沒驗證，<button id="btn-resend-verify" class="link-btn-small">重新發送驗證信</button>
+  </div>
+
+  <div class="lobby-grid">
+    <div class="card stat-card">
+      <div class="stat-label">我的最高分</div>
+      <div class="stat-value" id="my-best">--</div>
+      <div class="stat-label">已玩局數</div>
+      <div class="stat-value stat-value-sm" id="my-games">--</div>
+      <div class="stat-label">💰 目前金幣</div>
+      <div class="stat-value stat-value-sm" id="my-coins">--</div>
+      <div class="side-actions">
+        <button id="btn-open-leaderboard" class="btn btn-secondary">🏆 排行榜</button>
+        <button id="btn-open-shop" class="btn btn-secondary">🛒 造型商店</button>
+        <button id="btn-open-friends" class="btn btn-secondary">👥 好友 <span id="friend-request-badge" class="badge hidden">!</span></button>
+        <button id="btn-open-stats" class="btn btn-secondary">📊 我的戰績</button>
+      </div>
+    </div>
+
+    <div class="card lobby-actions">
+      <h2>開始遊戲</h2>
+      <button id="btn-create-room" class="btn btn-primary btn-lg">🎮 開始遊戲</button>
+      <button id="btn-toggle-join" class="btn btn-ghost">已經有房間代碼？點此加入</button>
+      <div class="join-row hidden" id="join-row">
+        <input type="text" id="join-code-input" maxlength="4" placeholder="輸入 4 碼房間代碼" />
+        <button id="btn-join-room" class="btn btn-secondary">加入</button>
+      </div>
+      <p class="hint">建立房間後把 4 碼代碼分享給朋友即可一起玩。</p>
+    </div>
+  </div>
+
+  <div class="card room-list-card">
+    <h2>🚪 目前開放中的房間</h2>
+    <ul id="open-room-list" class="open-room-list">
+      <li class="open-room-empty">載入中...</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ===== 模式選擇彈窗 ===== -->
+<div id="modal-mode-select" class="modal hidden">
+  <div class="modal-card card">
+    <h2>選擇遊戲模式</h2>
+    <div class="mode-options">
+      <button id="mode-survival" class="mode-btn">
+        <div class="mode-icon">🏆</div>
+        <div class="mode-name">生存模式</div>
+        <div class="mode-desc">沒有時間限制，撐到最後一個活下來的人獲勝，名次依存活順序決定</div>
+      </button>
+      <button id="mode-timed" class="mode-btn">
+        <div class="mode-icon">⏱️</div>
+        <div class="mode-name">限時模式</div>
+        <div class="mode-desc">固定 3 分鐘，死掉 3 秒後會重生，名次依擊殺數決定</div>
+      </button>
+      <button id="mode-moba" class="mode-btn">
+        <div class="mode-icon">🏰</div>
+        <div class="mode-name">MOBA 對決</div>
+        <div class="mode-desc">3v3 分隊、一人一路。吃果實升級選元素、自動鎖定普攻、6級大招，推掉敵方主堡獲勝</div>
+      </button>
+    </div>
+    <button id="btn-close-mode-select" class="btn btn-secondary">取消</button>
+  </div>
+</div>
+
+<!-- ===== 房間 / 準備畫面 ===== -->
+<section id="screen-room" class="screen">
+  <header class="topbar">
+    <div class="brand">房間代碼：<span id="room-code-display" class="room-code">----</span></div>
+    <button id="btn-leave-room" class="link-btn">離開房間</button>
+  </header>
+
+  <div class="card room-card">
+    <div class="room-mode-badge" id="room-mode-badge"></div>
+    <h2>玩家列表 <span id="player-count"></span></h2>
+    <ul id="player-list" class="player-list"></ul>
+
+    <!-- MOBA 模式專用：兩隊分開顯示，點按鈕加入該隊 -->
+    <div id="moba-team-panel" class="moba-team-panel hidden">
+      <div class="moba-team-col moba-team-a">
+        <h3>🔴 A 隊（左下主堡）</h3>
+        <ul id="moba-team-a-list" class="moba-team-list"></ul>
+        <button type="button" id="btn-join-team-a" class="btn btn-secondary moba-join-btn">加入 A 隊</button>
+      </div>
+      <div class="moba-team-col moba-team-b">
+        <h3>🔵 B 隊（右上主堡）</h3>
+        <ul id="moba-team-b-list" class="moba-team-list"></ul>
+        <button type="button" id="btn-join-team-b" class="btn btn-secondary moba-join-btn">加入 B 隊</button>
+      </div>
+    </div>
+
+    <div class="bot-settings" id="bot-settings">
+      <div class="bot-settings-row">
+        <span>🤖 電腦對手數量</span>
+        <div class="stepper">
+          <button id="bot-count-minus" type="button">－</button>
+          <span id="bot-count-display">0</span>
+          <button id="bot-count-plus" type="button">＋</button>
+        </div>
+      </div>
+      <div class="bot-settings-row">
+        <span>電腦難度</span>
+        <div class="tabs" id="bot-difficulty-tabs">
+          <button class="diff-btn" data-diff="easy">簡單</button>
+          <button class="diff-btn active" data-diff="normal">普通</button>
+          <button class="diff-btn" data-diff="hard">困難</button>
+        </div>
+      </div>
+      <p class="hint" id="bot-settings-hint"></p>
+    </div>
+    <div id="countdown-display" class="countdown hidden"></div>
+    <button id="btn-toggle-ready" class="btn btn-secondary">✅ 準備好了</button>
+    <button id="btn-start-game" class="btn btn-primary hidden">🚀 開始遊戲（房主）</button>
+    <p class="hint" id="room-hint">等待所有人按下「準備好了」，房主即可開始遊戲。</p>
+  </div>
+</section>
+
+<!-- ===== 遊戲畫面 ===== -->
+<section id="screen-game" class="screen">
+  <div class="game-hud">
+    <div id="time-left" class="hud-pill">⏱ 03:00</div>
+    <button id="btn-fullscreen" class="hud-pill hud-btn">⛶ 全螢幕</button>
+    <button id="btn-mute-game" class="hud-pill hud-btn">🔊</button>
+  </div>
+  <div class="canvas-wrap">
+    <canvas id="game-canvas" width="600" height="400" class="game-canvas"></canvas>
+    <div id="game-message" class="game-message hidden"></div>
+    <ul id="score-list" class="score-list"></ul>
+    <canvas id="minimap-canvas" width="150" height="100" class="minimap"></canvas>
+    <div id="moba-hud" class="moba-hud hidden">
+      <div class="moba-hud-level">Lv.<span id="moba-hud-level-num">1</span></div>
+      <div class="moba-hud-bar-wrap">
+        <div class="moba-hud-bar-label">HP</div>
+        <div class="moba-hud-bar hp-bar"><div class="moba-hud-bar-fill" id="moba-hud-hp-fill"></div></div>
+      </div>
+      <div class="moba-hud-bar-wrap">
+        <div class="moba-hud-bar-label">XP</div>
+        <div class="moba-hud-bar xp-bar"><div class="moba-hud-bar-fill" id="moba-hud-xp-fill"></div></div>
+      </div>
+      <button type="button" id="btn-attack-priority" class="moba-priority-btn">🗡️ 優先殺人</button>
+    </div>
+    <div id="spectator-hint" class="spectator-hint hidden">🖐️ 拖曳畫面環顧戰場</div>
+  </div>
+
+  <button id="btn-boost" class="boost-btn">⚡<br>加速</button>
+  <button id="btn-shoot" class="shoot-btn">🔫<br>射擊</button>
+
+  <div id="joystick-base" class="joystick-base">
+    <div id="joystick-knob" class="joystick-knob"></div>
+  </div>
+
+  <p class="control-hint">🖱️ 電腦：滑鼠移動方向，按住左鍵加速，空白鍵射擊　　📱 手機：左下角搖桿控制方向，右下角按鈕加速/射擊</p>
+</section>
+
+<!-- ===== 遊戲結束彈窗 ===== -->
+<div id="modal-gameover" class="modal hidden">
+  <div class="modal-card card">
+    <h2>🏁 這局結束了！</h2>
+    <ol id="rankings-list" class="rankings-list"></ol>
+    <p id="coins-earned-line" class="hint coins-earned hidden"></p>
+    <button id="btn-back-lobby" class="btn btn-primary">回到房間大廳</button>
+  </div>
+</div>
+
+<!-- ===== MOBA 升級選元素彈窗 ===== -->
+<div id="modal-element-choice" class="modal hidden">
+  <div class="modal-card card element-choice-card">
+    <h2>⬆️ 升到 <span id="element-choice-level">2</span> 級！選一個元素</h2>
+    <p class="hint">永久生效，就算之後合成技能屬性也會繼續加</p>
+    <div class="element-options">
+      <button type="button" class="element-btn element-fire" data-element="fire">
+        <div class="element-icon">🔥</div><div class="element-name">火</div><div class="element-desc">+攻擊</div>
+      </button>
+      <button type="button" class="element-btn element-water" data-element="water">
+        <div class="element-icon">💧</div><div class="element-name">水</div><div class="element-desc">+攻速</div>
+      </button>
+      <button type="button" class="element-btn element-earth" data-element="earth">
+        <div class="element-icon">🌍</div><div class="element-name">土</div><div class="element-desc">+血量</div>
+      </button>
+      <button type="button" class="element-btn element-wind" data-element="wind">
+        <div class="element-icon">🌪️</div><div class="element-name">風</div><div class="element-desc">+跑速</div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MOBA 勝負公告彈窗（Phase 1 簡易版，之後會換成正式的推塔結算畫面） ===== -->
+<div id="modal-moba-gameover" class="modal hidden">
+  <div class="modal-card card">
+    <h2 id="moba-result-title">🏁 這局結束了！</h2>
+    <p class="hint">MOBA 模式目前還沒有金幣/戰績結算（純娛樂對戰）</p>
+    <button id="btn-moba-back-lobby" class="btn btn-primary">回到房間大廳</button>
+  </div>
+</div>
+
+<!-- ===== 造型商店彈窗 ===== -->
+<div id="modal-shop" class="modal hidden">
+  <div class="modal-card card shop-card">
+    <h2>🛒 造型商店</h2>
+    <div class="shop-balance">💰 <span id="shop-coin-balance">0</span> 金幣</div>
+    <p class="hint" id="shop-guest-hint">訪客身分無法使用商店，請先登入帳號。</p>
+    <div class="shop-grid" id="shop-grid"></div>
+    <button id="btn-close-shop" class="btn btn-secondary">關閉</button>
+  </div>
+</div>
+
+<!-- ===== 好友彈窗 ===== -->
+<div id="modal-friends" class="modal hidden">
+  <div class="modal-card card">
+    <h2>👥 好友</h2>
+    <p class="hint" id="friends-guest-hint">訪客身分無法使用好友功能，請先登入帳號。</p>
+    <div id="friends-body">
+      <div class="friend-search-row">
+        <input type="text" id="friend-search-input" placeholder="搜尋玩家暱稱..." />
+        <button id="btn-friend-search" class="btn btn-secondary">搜尋</button>
+      </div>
+      <ul id="friend-search-results" class="social-list"></ul>
+
+      <h3 id="friend-incoming-title" class="social-subtitle hidden">📨 好友邀請</h3>
+      <ul id="friend-incoming-list" class="social-list"></ul>
+
+      <h3 class="social-subtitle">我的好友</h3>
+      <ul id="friend-list" class="social-list">
+        <li class="social-empty">還沒有好友，搜尋暱稱或在遊戲結算畫面加好友看看！</li>
+      </ul>
+
+      <h3 class="social-subtitle">🚫 已封鎖的玩家</h3>
+      <ul id="blocked-list" class="social-list">
+        <li class="social-empty">目前沒有封鎖任何人</li>
+      </ul>
+    </div>
+    <button id="btn-close-friends" class="btn btn-secondary">關閉</button>
+  </div>
+</div>
+
+<!-- ===== 戰績彈窗 ===== -->
+<div id="modal-stats" class="modal hidden">
+  <div class="modal-card card">
+    <h2>📊 我的戰績</h2>
+    <p class="hint" id="stats-guest-hint">訪客身分沒有紀錄戰績，請先登入帳號。</p>
+    <div id="stats-grid" class="stats-grid">
+      <div class="stats-item"><div class="stats-value" id="stats-highscore">--</div><div class="stats-label">最高分</div></div>
+      <div class="stats-item"><div class="stats-value" id="stats-games">--</div><div class="stats-label">已玩局數</div></div>
+      <div class="stats-item"><div class="stats-value" id="stats-wins">--</div><div class="stats-label">🏆 獲勝次數</div></div>
+      <div class="stats-item"><div class="stats-value" id="stats-kills">--</div><div class="stats-label">⚔️ 總擊殺數</div></div>
+      <div class="stats-item"><div class="stats-value" id="stats-coins">--</div><div class="stats-label">💰 目前金幣</div></div>
+    </div>
+    <button id="btn-close-stats" class="btn btn-secondary">關閉</button>
+  </div>
+</div>
+
+<!-- ===== 新手教學彈窗 ===== -->
+<div id="modal-tutorial" class="modal hidden">
+  <div class="modal-card card tutorial-card">
+    <h2>🐍 怎麼玩</h2>
+    <div class="tutorial-section">
+      <h3>🎮 操控</h3>
+      <p><strong>電腦：</strong>滑鼠移到想去的方向，蛇會平滑轉向；按住左鍵加速；空白鍵射擊。</p>
+      <p><strong>手機：</strong>左下角搖桿控制方向；右下角按鈕加速／射擊。</p>
+    </div>
+    <div class="tutorial-section">
+      <h3>🍎 食物</h3>
+      <p>一般食物 +10 分；⭐ 超級食物 +30 分，限時出現；⚡ 加速道具吃到後速度變快。</p>
+    </div>
+    <div class="tutorial-section">
+      <h3>💥 戰鬥</h3>
+      <p>射擊會消耗自己 1 節身體，打中對手身體會扣節數，打中頭部直接淘汰對手；死掉的蛇會原地變成食物。</p>
+    </div>
+    <div class="tutorial-section">
+      <h3>🏆 模式</h3>
+      <p><strong>生存模式：</strong>沒有時間限制，撐到最後才是贏家，名次依存活順序決定。</p>
+      <p><strong>限時模式：</strong>固定 3 分鐘，死掉 3 秒後會重生，名次依擊殺數決定。</p>
+    </div>
+    <div class="tutorial-section">
+      <h3>💰 金幣與造型</h3>
+      <p>每局結束依名次獲得金幣（單人玩不會有金幣），可以到商店購買/裝備各種造型。</p>
+    </div>
+    <label class="tutorial-checkbox"><input type="checkbox" id="tutorial-dont-show" /> 不要再自動顯示這個教學</label>
+    <button id="btn-close-tutorial" class="btn btn-primary">開始玩！</button>
+  </div>
+</div>
+
+<!-- ===== 排行榜彈窗 ===== -->
+<div id="modal-leaderboard" class="modal hidden">
+  <div class="modal-card card">
+    <h2>🏆 排行榜</h2>
+    <div class="tabs">
+      <button class="period-btn active" data-period="all">總排行 TOP 20</button>
+      <button class="period-btn" data-period="week">本週排行 TOP 20</button>
+    </div>
+    <ol id="leaderboard-list" class="rankings-list"></ol>
+    <button id="btn-close-leaderboard" class="btn btn-secondary">關閉</button>
+  </div>
+</div>
+
+<!-- ===== PWA 版本更新提示 ===== -->
+<div id="update-banner" class="update-banner hidden">
+  <span>🎉 有新版本可以用囉！</span>
+  <button id="btn-update-now" class="btn btn-primary">立即更新</button>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="firebase-config.js"></script>
+<script src="auth.js"></script>
+<script src="leaderboard.js"></script>
+<script src="game.js"></script>
+<script src="shop.js"></script>
+<script src="social.js"></script>
+<script>
+  // PWA：註冊 service worker，並偵測「有新版本可以用」的情況，跳出更新按鈕給使用者自己決定何時更新
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').then((registration) => {
+        const banner = document.getElementById('update-banner');
+        let waitingWorker = null;
+
+        function showUpdateBanner(worker) {
+          waitingWorker = worker;
+          banner.classList.remove('hidden');
+        }
+
+        // 網頁載入當下，可能剛好就已經有新版本在等待中
+        if (registration.waiting) showUpdateBanner(registration.waiting);
+
+        // 之後偵測到有新版本正在背景下載安裝完成時
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          if (!newWorker) return;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              showUpdateBanner(newWorker);
+            }
+          });
+        });
+
+        // 每隔一段時間主動檢查一次有沒有新版本（瀏覽器不一定會自己即時檢查）
+        setInterval(() => registration.update().catch(() => {}), 5 * 60 * 1000);
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') registration.update().catch(() => {});
+        });
+
+        document.getElementById('btn-update-now').addEventListener('click', () => {
+          if (!waitingWorker) return;
+          waitingWorker.postMessage('SKIP_WAITING');
+        });
+
+        // 新版本正式接管頁面後，重新整理一次讓所有畫面都變成新版本
+        let reloaded = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (reloaded) return;
+          reloaded = true;
+          window.location.reload();
+        });
+      }).catch(() => {});
+    });
+  }
+</script>
+</body>
+</html>
