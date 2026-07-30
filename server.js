@@ -11,10 +11,23 @@ const registerRestRoutes = require('./lib/restRoutes');
 
 // ---------- Express + Socket.io ----------
 const app = express();
-app.use(express.static(path.join(__dirname, 'public')));
+// vv Icons never change between deploys in practice; let browsers cache them for a week
+// so repeat visits don't re-download them (they were the biggest static files).
+app.use(express.static(path.join(__dirname, 'public'), {
+  setHeaders(res, filePath) {
+    if (filePath.includes(`${path.sep}icons${path.sep}`)) {
+      res.setHeader('Cache-Control', 'public, max-age=604800');
+    }
+  },
+}));
 
 const server = http.createServer(app);
-const io = new Server(server);
+// vv permessage-deflate compresses the highly repetitive state_update JSON (~4-8x smaller
+// on the wire). threshold: skip compressing tiny messages where it isn't worth the CPU.
+const io = new Server(server, {
+  perMessageDeflate: { threshold: 512 },
+  httpCompression: { threshold: 512 },
+});
 
 // ---------- 組裝遊戲引擎 + 事件處理 + REST API ----------
 // 這三個模組的內容都是從原本單一一大包的 server.js 拆出來的，邏輯完全沒有變動，

@@ -118,6 +118,22 @@ const VIEW_W = 600;
 const MOBA_XP_THRESHOLDS = [30, 50, 80, 120, 170];
 const VIEW_H = 400;
 
+// vv The server now sends each snake's body as a flat integer array [x0,y0,x1,y1,...]
+// to keep the packets small. Convert it back to [{x,y},...] right here at the entry
+// point, so every other piece of client code keeps working with point objects.
+// (Tolerates the old object format too, in case of a version mismatch during deploy.)
+function decodeStatePoints(state) {
+  if (!state || !state.players) return state;
+  state.players.forEach((p) => {
+    if (Array.isArray(p.points) && (p.points.length === 0 || typeof p.points[0] === 'number')) {
+      const pts = [];
+      for (let i = 0; i + 1 < p.points.length; i += 2) pts.push({ x: p.points[i], y: p.points[i + 1] });
+      p.points = pts;
+    }
+  });
+  return state;
+}
+
 socket.on('connect', () => {
   myId = socket.id;
   socket.emit('identify', { sessionId: mySessionId });
@@ -133,6 +149,7 @@ socket.on('connect', () => {
 socket.on('reconnected', ({ code, status, state }) => {
   currentRoomCode = code;
   if (status === 'playing' && state) {
+    decodeStatePoints(state);
     enterGameScreen();
     latestWorld = state.world;
     latestState = state;
@@ -620,6 +637,7 @@ let deathEffects = [];  // { x, y, color, start }
 let shakeUntil = 0;
 
 socket.on('state_update', (state) => {
+  decodeStatePoints(state);
   latestWorld = state.world;
   latestState = state;
   document.getElementById('game-message').classList.add('hidden');

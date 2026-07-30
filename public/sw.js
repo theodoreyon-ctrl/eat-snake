@@ -1,7 +1,7 @@
 // Service Worker：只負責快取「靜態外殼」（HTML/CSS/JS/圖示），
 // 讓瀏覽器願意把這個網站當成可安裝的 App，並支援「偵測到新版本時跳出更新按鈕」。
 // Socket.io 即時連線跟 /api/ 資料一律不快取，永遠走網路，不然遊戲資料會是舊的。
-const CACHE_NAME = 'snake-online-shell-v2';
+const CACHE_NAME = 'snake-online-shell-v3';
 const SHELL_FILES = [
   '/',
   '/index.html',
