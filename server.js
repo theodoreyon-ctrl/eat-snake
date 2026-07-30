@@ -22,9 +22,10 @@ app.use(express.static(path.join(__dirname, 'public'), {
 }));
 
 const server = http.createServer(app);
-// vv permessage-deflate compresses the highly repetitive state_update JSON (~4-8x smaller
-// on the wire). threshold: skip compressing tiny messages where it isn't worth the CPU.
 const io = new Server(server, {
+  // 座標/顏色這類重複性高的資料很適合壓縮，能省下不少頻寬（Engine.IO v4之後預設關閉，這裡手動打開）
+  // vv threshold lowered to 512: the flat-array wire format makes many messages smaller
+  // than 1KB, and those still compress well. httpCompression covers the polling transport.
   perMessageDeflate: { threshold: 512 },
   httpCompression: { threshold: 512 },
 });
