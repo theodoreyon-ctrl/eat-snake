@@ -14,7 +14,12 @@ const app = express();
 app.use(express.static(path.join(__dirname, 'public')));
 
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+  // 座標/顏色這類重複性高的資料很適合壓縮，能省下不少頻寬（Engine.IO v4之後預設關閉，這裡手動打開）
+  perMessageDeflate: {
+    threshold: 1024, // 訊息超過1KB才壓縮，太小的訊息壓縮反而不划算
+  },
+});
 
 // ---------- 組裝遊戲引擎 + 事件處理 + REST API ----------
 // 這三個模組的內容都是從原本單一一大包的 server.js 拆出來的，邏輯完全沒有變動，
