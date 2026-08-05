@@ -1,0 +1,21 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // users/{uid}：displayName / highScore / gamesPlayed
+    // 讀取：任何人都可以讀（排行榜需要），
+    // 寫入：只允許本人建立/更新自己的「顯示名稱」，
+    // highScore、gamesPlayed 只能由伺服器（firebase-admin，會繞過規則）寫入，
+    // 避免玩家從瀏覽器端 Console 直接竄改分數。
+    match /users/{uid} {
+      allow read: if true;
+      allow create: if request.auth != null && request.auth.uid == uid
+                    && request.resource.data.highScore == 0
+                    && request.resource.data.gamesPlayed == 0;
+      allow update: if request.auth != null && request.auth.uid == uid
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                       .hasOnly(['displayName']);
+      allow delete: if false;
+    }
+  }
+}

@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<title>MOBA 地形編輯器 - 蛇蛇突擊</title>
+<style>
+  body { font-family: -apple-system, "Microsoft JhengHei", sans-serif; background: #2B3A3A; color: #EFEFE8; margin: 0; padding: 20px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .hint { color: #B8C4C4; font-size: 13px; margin: 0 0 16px; line-height: 1.6; }
+  .layout { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+  canvas { background: #7A8C5C; border: 3px solid #FFC857; border-radius: 16px; cursor: crosshair; }
+  .panel { min-width: 320px; }
+  .row { margin-bottom: 12px; }
+  button {
+    background: #4FD1C5; color: #1C2626; border: none; border-radius: 8px; padding: 10px 14px;
+    font-weight: 700; cursor: pointer; margin: 3px 4px 3px 0; font-size: 13px;
+  }
+  button:hover { background: #6BE0D5; }
+  button.danger { background: #FF6B81; color: white; }
+  button.danger:hover { background: #FF889A; }
+  button.secondary { background: #556; color: #EFEFE8; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  textarea {
+    width: 100%; height: 260px; background: #1C2626; color: #9BE8B8; font-family: monospace;
+    font-size: 12px; border: 1px solid #556; border-radius: 6px; padding: 10px; box-sizing: border-box;
+  }
+  .stat { font-size: 13px; color: #FFC857; margin: 6px 0; }
+  label { font-size: 13px; display: flex; align-items: center; gap: 6px; margin: 8px 0; }
+  .coord { font-size: 12px; color: #B8C4C4; }
+  .shape-list { font-size: 12px; color: #B8C4C4; max-height: 120px; overflow-y: auto; }
+  .shape-list div { display: flex; justify-content: space-between; padding: 3px 0; }
+  .shape-list button { padding: 2px 8px; font-size: 11px; }
+</style>
+</head>
+<body>
+
+<h1>🗺️ MOBA 地形編輯器</h1>
+<p class="hint">
+  在地圖上點擊，依序點出一塊石頭/草叢的每個頂點（至少3點）→ 按「完成這一塊」→ 繼續點下一塊。<br>
+  灰色虛線是三條路的參考線，黃點是兩個主堡位置。滑鼠移到畫面上會顯示目前的世界座標。<br>
+  石頭（棕色，會擋路）跟草叢（綠色，不擋路但站進去對敵人隱形）是分開畫的，畫之前先選好下面要畫哪一種。<br>
+  這個頁面完全在你電腦本機執行，不會連到伺服器，也不會佔用任何流量。
+</p>
+
+<div class="layout">
+  <div>
+    <canvas id="canvas" width="800" height="800"></canvas>
+    <div class="coord" id="mouseCoord">世界座標: --</div>
+  </div>
+
+  <div class="panel">
+    <div class="row">
+      <label style="display:inline-flex;"><input type="radio" name="shapeType" value="rock" checked /> 🪨 石頭（擋路）</label>
+      <label style="display:inline-flex; margin-left:16px;"><input type="radio" name="shapeType" value="bush" /> 🌿 草叢（隱形）</label>
+    </div>
+    <div class="row">
+      <button id="btnLoadExisting">📥 把目前的石頭/草叢載入成可編輯</button>
+    </div>
+    <div class="row">
+      <button id="btnFinish">✅ 完成這一塊</button>
+      <button id="btnUndo" class="secondary">↩️ 復原上一個點</button>
+      <button id="btnCancelCurrent" class="secondary">✖️ 取消目前這塊</button>
+    </div>
+    <div class="row">
+      <button id="btnDeleteLast" class="danger">🗑️ 刪除最後一塊</button>
+      <button id="btnClearAll" class="danger">🗑️ 全部清空</button>
+    </div>
+    <div class="row">
+      <label style="font-weight:700;">鏡射模式：</label>
+      <label style="display:inline-flex;"><input type="radio" name="mirrorMode" value="none" /> 不鏡射</label>
+      <label style="display:inline-flex; margin-left:10px;"><input type="radio" name="mirrorMode" value="2way" /> 2向（沿主堡連線對稱，畫一半）</label>
+      <label style="display:inline-flex; margin-left:10px;"><input type="radio" name="mirrorMode" value="4way" checked /> 4向（畫1/4補滿全部）</label>
+    </div>
+    <label><input type="checkbox" id="mirrorPreview" checked /> 畫的時候就顯示鏡射預覽（淡色顯示）</label>
+
+    <div class="stat" id="statLine">目前這塊：0 個點　已完成：石頭0塊／草叢0塊</div>
+
+    <div class="shape-list" id="shapeList"></div>
+
+    <div class="row" style="margin-top:16px;">
+      <button id="btnExport">📤 匯出座標</button>
+      <button id="btnLoad" class="secondary">📥 載入已匯出的資料</button>
+    </div>
+    <textarea id="output" placeholder="按「匯出座標」後，這裡會出現可以直接貼到 lib/config.js 的程式碼..."></textarea>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const WORLD_SIZE = 4000;
+const SCALE = canvas.width / WORLD_SIZE; // 0.2，1個畫面像素 = 5個世界單位
+
+const BASE_A = { x: 420, y: 3580 };
+const BASE_B = { x: 3580, y: 420 };
+const MID = { x: 2000, y: 2000 };
+const LANES = [
+  [BASE_A, { x: 420, y: 420 }, BASE_B],
+  [BASE_A, MID, BASE_B],
+  [BASE_A, { x: 3580, y: 3580 }, BASE_B],
+];
+
+let currentPoints = []; // 目前正在畫的這一塊，世界座標
+// 參考底圖：目前遊戲裡已經有的石頭位置，純粹顯示用（半透明、畫在最底層），
+// 不會出現在 shapes 裡，不會被匯出、也不會被鏡射邏輯重複套用，只是讓你畫草叢時知道石頭在哪。
+const referenceRocks = [
+      [[2073, 2194], [1849, 2408], [1909, 2532], [2102, 2572], [2162, 2353]],
+      [[1806, 1927], [1592, 2151], [1468, 2091], [1428, 1898], [1647, 1838]],
+      [[2194, 2073], [2408, 1849], [2532, 1909], [2572, 2102], [2353, 2162]],
+      [[1927, 1806], [2151, 1592], [2091, 1468], [1898, 1428], [1838, 1647]],
+      [[994, 3297], [1302, 2989], [1456, 2905], [1566, 2934], [1645, 3153], [1809, 3287], [1740, 3302]],
+      [[703, 3006], [1011, 2698], [1095, 2544], [1066, 2434], [847, 2355], [713, 2191], [698, 2260]],
+      [[3297, 994], [2989, 1302], [2905, 1456], [2934, 1566], [3153, 1645], [3287, 1809], [3302, 1740]],
+      [[3006, 703], [2698, 1011], [2544, 1095], [2434, 1066], [2355, 847], [2191, 713], [2260, 698]],
+      [[1615, 2741], [1730, 2567], [1948, 2800], [1933, 2900], [1819, 2910], [1680, 2855]],
+      [[1259, 2385], [1433, 2270], [1200, 2052], [1100, 2067], [1090, 2181], [1145, 2320]],
+      [[2741, 1615], [2567, 1730], [2800, 1948], [2900, 1933], [2910, 1819], [2855, 1680]],
+      [[2385, 1259], [2270, 1433], [2052, 1200], [2067, 1100], [2181, 1090], [2320, 1145]],
+      [[1953, 3128], [1988, 3267], [2684, 3277], [2773, 3188], [2555, 3103], [2266, 3059]],
+      [[872, 2047], [733, 2012], [723, 1316], [812, 1227], [897, 1445], [941, 1734]],
+      [[3128, 1953], [3267, 1988], [3277, 2684], [3188, 2773], [3103, 2555], [3059, 2266]],
+      [[2047, 872], [2012, 733], [1316, 723], [1227, 812], [1445, 897], [1734, 941]],
+      [[2903, 3267], [3141, 3262], [3042, 3168], [2927, 3168]],
+      [[733, 1097], [738, 859], [832, 958], [832, 1073]],
+      [[3267, 2903], [3262, 3141], [3168, 3042], [3168, 2927]],
+      [[1097, 733], [859, 738], [958, 832], [1073, 832]],
+      [[2371, 2552], [2599, 2716], [2768, 2984], [2525, 2915], [2326, 2790], [2286, 2691]],
+      [[1448, 1629], [1284, 1401], [1016, 1232], [1085, 1475], [1210, 1674], [1309, 1714]],
+      [[2552, 2371], [2716, 2599], [2984, 2768], [2915, 2525], [2790, 2326], [2691, 2286]],
+      [[1629, 1448], [1401, 1284], [1232, 1016], [1475, 1085], [1674, 1210], [1714, 1309]],
+      [[1806, 1927], [1592, 2151], [1468, 2091], [1428, 1898], [1647, 1838]],
+      [[2073, 2194], [1849, 2408], [1909, 2532], [2102, 2572], [2162, 2353]],
+      [[1927, 1806], [2151, 1592], [2091, 1468], [1898, 1428], [1838, 1647]],
+      [[2194, 2073], [2408, 1849], [2532, 1909], [2572, 2102], [2353, 2162]],
+      [[703, 3006], [1011, 2698], [1095, 2544], [1066, 2434], [847, 2355], [713, 2191], [698, 2260]],
+      [[994, 3297], [1302, 2989], [1456, 2905], [1566, 2934], [1645, 3153], [1809, 3287], [1740, 3302]],
+      [[3006, 703], [2698, 1011], [2544, 1095], [2434, 1066], [2355, 847], [2191, 713], [2260, 698]],
+      [[3297, 994], [2989, 1302], [2905, 1456], [2934, 1566], [3153, 1645], [3287, 1809], [3302, 1740]],
+      [[1259, 2385], [1433, 2270], [1200, 2052], [1100, 2067], [1090, 2181], [1145, 2320]],
+      [[1615, 2741], [1730, 2567], [1948, 2800], [1933, 2900], [1819, 2910], [1680, 2855]],
+      [[2385, 1259], [2270, 1433], [2052, 1200], [2067, 1100], [2181, 1090], [2320, 1145]],
+      [[2741, 1615], [2567, 1730], [2800, 1948], [2900, 1933], [2910, 1819], [2855, 1680]],
+      [[872, 2047], [733, 2012], [723, 1316], [812, 1227], [897, 1445], [941, 1734]],
+      [[1953, 3128], [1988, 3267], [2684, 3277], [2773, 3188], [2555, 3103], [2266, 3059]],
+      [[2047, 872], [2012, 733], [1316, 723], [1227, 812], [1445, 897], [1734, 941]],
+      [[3128, 1953], [3267, 1988], [3277, 2684], [3188, 2773], [3103, 2555], [3059, 2266]],
+      [[733, 1097], [738, 859], [832, 958], [832, 1073]],
+      [[2903, 3267], [3141, 3262], [3042, 3168], [2927, 3168]],
+      [[1097, 733], [859, 738], [958, 832], [1073, 832]],
+      [[3267, 2903], [3262, 3141], [3168, 3042], [3168, 2927]],
+      [[1448, 1629], [1284, 1401], [1016, 1232], [1085, 1475], [1210, 1674], [1309, 1714]],
+      [[2371, 2552], [2599, 2716], [2768, 2984], [2525, 2915], [2326, 2790], [2286, 2691]],
+      [[1629, 1448], [1401, 1284], [1232, 1016], [1475, 1085], [1674, 1210], [1714, 1309]],
+      [[2552, 2371], [2716, 2599], [2984, 2768], [2915, 2525], [2790, 2326], [2691, 2286]],
+].map(pts => pts.map(([x, y]) => ({ x, y })));
+const referenceBushes = [
+  
+  [[3134, 3252], [3164, 3225], [3065, 3136], [3030, 3156]],
+  [[748, 866], [775, 836], [864, 935], [844, 970]],
+  [[3252, 3134], [3225, 3164], [3136, 3065], [3156, 3030]],
+  [[866, 748], [836, 775], [935, 864], [970, 844]],
+  [[1461, 2898], [1491, 2868], [1581, 2883], [1615, 2893], [1630, 2937], [1640, 2967], [1645, 2992], [1605, 3012], [1596, 3012], [1561, 2922], [1491, 2907], [1511, 2912], [1536, 2917]],
+  [[1102, 2539], [1132, 2509], [1117, 2419], [1107, 2385], [1063, 2370], [1033, 2360], [1008, 2355], [988, 2395], [988, 2404], [1078, 2439], [1093, 2509], [1088, 2489], [1083, 2464]],
+  [[2898, 1461], [2868, 1491], [2883, 1581], [2893, 1615], [2937, 1630], [2967, 1640], [2992, 1645], [3012, 1605], [3012, 1596], [2922, 1561], [2907, 1491], [2912, 1511], [2917, 1536]],
+  [[2539, 1102], [2509, 1132], [2419, 1117], [2385, 1107], [2370, 1063], [2360, 1033], [2355, 1008], [2395, 988], [2404, 988], [2439, 1078], [2509, 1093], [2489, 1088], [2464, 1083]],
+  [[1564, 3576], [1564, 3526], [1733, 3516], [1748, 3561], [1743, 3571], [1733, 3576]],
+  [[424, 2436], [474, 2436], [484, 2267], [439, 2252], [429, 2257], [424, 2267]],
+  [[3576, 1564], [3526, 1564], [3516, 1733], [3561, 1748], [3571, 1743], [3576, 1733]],
+  [[2436, 424], [2436, 474], [2267, 484], [2252, 439], [2257, 429], [2267, 424]],
+  [[1087, 1471], [1057, 1510], [1152, 1659], [1186, 1624]],
+  [[2529, 2913], [2490, 2943], [2341, 2848], [2376, 2814]],
+  [[1471, 1087], [1510, 1057], [1659, 1152], [1624, 1186]],
+  [[2913, 2529], [2943, 2490], [2848, 2341], [2814, 2376]],
+  [[2066, 2188], [2090, 2158], [2125, 2198], [2155, 2242], [2180, 2292], [2180, 2327], [2160, 2347]],
+  [[1812, 1934], [1842, 1910], [1802, 1875], [1758, 1845], [1708, 1820], [1673, 1820], [1653, 1840]],
+  [[2188, 2066], [2158, 2090], [2198, 2125], [2242, 2155], [2292, 2180], [2327, 2180], [2347, 2160]],
+  [[1934, 1812], [1910, 1842], [1875, 1802], [1845, 1758], [1820, 1708], [1820, 1673], [1840, 1653]],
+  [[422, 673], [517, 673], [507, 912], [427, 921]],
+  [[3327, 3578], [3327, 3483], [3088, 3493], [3079, 3573]],
+  [[673, 422], [673, 517], [912, 507], [921, 427]],
+  [[3578, 3327], [3483, 3327], [3493, 3088], [3573, 3079]]
+
+
+].map(pts => pts.map(([x, y]) => ({ x, y })));
+let shapes = []; // 已完成的形狀，每個是世界座標點陣列
+
+function toCanvas(wx, wy) { return { x: wx * SCALE, y: wy * SCALE }; }
+function toWorld(cx, cy) { return { x: Math.round(cx / SCALE), y: Math.round(cy / SCALE) }; }
+function mirror(pt) { return { x: WORLD_SIZE - pt.y, y: WORLD_SIZE - pt.x }; } // 鏡射①：沿x+y=4000(主堡連線)
+function mirror2(pt) { return { x: pt.y, y: pt.x }; } // 鏡射②：沿x=y(垂直於主堡連線、通過地圖中心)
+function currentMirrorMode() { return document.querySelector('input[name="mirrorMode"]:checked').value; }
+// 依鏡射模式，回傳這組點要產生哪幾份(不含原本那份)
+function mirrorVariants(points, mode) {
+  if (mode === '2way') return [points.map(mirror)];
+  if (mode === '4way') return [points.map(mirror), points.map(mirror2), points.map(p => mirror(mirror2(p)))];
+  return [];
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // 地圖邊界(圓角)，跟遊戲畫面裡的樣式一致，方便對照
+  const r = WORLD_SIZE * 0.015 * SCALE; // 跟遊戲裡的比例大致對應
+  ctx.strokeStyle = '#FF9F1C';
+  ctx.lineWidth = 3;
+  ctx.setLineDash([8, 6]);
+  ctx.beginPath();
+  ctx.moveTo(r, 0);
+  ctx.lineTo(canvas.width - r, 0);
+  ctx.arcTo(canvas.width, 0, canvas.width, r, r);
+  ctx.lineTo(canvas.width, canvas.height - r);
+  ctx.arcTo(canvas.width, canvas.height, canvas.width - r, canvas.height, r);
+  ctx.lineTo(r, canvas.height);
+  ctx.arcTo(0, canvas.height, 0, canvas.height - r, r);
+  ctx.lineTo(0, r);
+  ctx.arcTo(0, 0, r, 0, r);
+  ctx.closePath();
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // 網格，每500世界單位一條
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+  ctx.lineWidth = 1;
+  for (let w = 0; w <= WORLD_SIZE; w += 500) {
+    const c = toCanvas(w, 0);
+    ctx.beginPath(); ctx.moveTo(c.x, 0); ctx.lineTo(c.x, canvas.height); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, c.x); ctx.lineTo(canvas.width, c.x); ctx.stroke();
+  }
+
+  // 三條路參考線
+  ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([8, 6]);
+  LANES.forEach(lane => {
+    ctx.beginPath();
+    lane.forEach((pt, i) => {
+      const c = toCanvas(pt.x, pt.y);
+      i === 0 ? ctx.moveTo(c.x, c.y) : ctx.lineTo(c.x, c.y);
+    });
+    ctx.stroke();
+  });
+  ctx.setLineDash([]);
+
+  // 河道：左上(0,0)到右下(4000,4000)，跟遊戲裡的方向一致
+  ctx.strokeStyle = 'rgba(58,176,255,0.35)';
+  ctx.lineWidth = 170 * 2 * SCALE;
+  ctx.beginPath();
+  ctx.moveTo(toCanvas(0, 0).x, toCanvas(0, 0).y);
+  ctx.lineTo(toCanvas(4000, 4000).x, toCanvas(4000, 4000).y);
+  ctx.stroke();
+
+  // 參考底圖：目前遊戲裡已經有的石頭/草叢（半透明，純顯示用，點不到也不會被匯出）
+  referenceRocks.forEach(pts => {
+    drawPolygon(pts, 'rgba(92,88,80,0.5)', 'rgba(0,0,0,0.25)', true);
+  });
+  referenceBushes.forEach(pts => {
+    drawPolygon(pts, 'rgba(58,120,58,0.4)', 'rgba(30,70,30,0.3)', true);
+  });
+
+  // 主堡標記
+  [['A', BASE_A, '#FF6B81'], ['B', BASE_B, '#3AB0FF']].forEach(([label, pos, color]) => {
+    const c = toCanvas(pos.x, pos.y);
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(c.x, c.y, 10, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(label, c.x, c.y + 4);
+  });
+
+  // 已完成的形狀
+  shapes.forEach((shape, idx) => {
+    const isBush = shape.type === 'bush';
+    drawPolygon(shape.points, isBush ? 'rgba(58,120,58,0.7)' : 'rgba(92,88,80,0.85)', isBush ? 'rgba(30,70,30,0.7)' : 'rgba(0,0,0,0.5)', true);
+    // 編號
+    const centerX = shape.points.reduce((s, p) => s + p.x, 0) / shape.points.length;
+    const centerY = shape.points.reduce((s, p) => s + p.y, 0) / shape.points.length;
+    const c = toCanvas(centerX, centerY);
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 13px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText((isBush ? '🌿' : '🪨') + (idx + 1), c.x, c.y);
+  });
+
+  // 鏡射預覽
+  if (document.getElementById('mirrorPreview').checked) {
+    const mode = currentMirrorMode();
+    shapes.forEach(shape => {
+      const isBush = shape.type === 'bush';
+      mirrorVariants(shape.points, mode).forEach(pts => {
+        drawPolygon(pts, isBush ? 'rgba(58,120,58,0.3)' : 'rgba(92,88,80,0.35)', isBush ? 'rgba(30,70,30,0.3)' : 'rgba(0,0,0,0.2)', true);
+      });
+    });
+    if (currentPoints.length >= 2) {
+      mirrorVariants(currentPoints, mode).forEach(pts => {
+        drawPolygon(pts, 'rgba(255,200,87,0.2)', 'rgba(255,200,87,0.3)', false);
+      });
+    }
+  }
+
+  // 目前正在畫的這一塊
+  if (currentPoints.length > 0) {
+    ctx.strokeStyle = '#FFC857';
+    ctx.fillStyle = 'rgba(255,200,87,0.3)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    currentPoints.forEach((pt, i) => {
+      const c = toCanvas(pt.x, pt.y);
+      i === 0 ? ctx.moveTo(c.x, c.y) : ctx.lineTo(c.x, c.y);
+    });
+    if (currentPoints.length >= 3) ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    currentPoints.forEach((pt) => {
+      const c = toCanvas(pt.x, pt.y);
+      ctx.fillStyle = '#FFC857';
+      ctx.beginPath(); ctx.arc(c.x, c.y, 4, 0, Math.PI * 2); ctx.fill();
+    });
+  }
+
+  const rockCount = shapes.filter(s => s.type === 'rock').length;
+  const bushCount = shapes.filter(s => s.type === 'bush').length;
+  document.getElementById('statLine').textContent =
+    `目前這塊：${currentPoints.length} 個點　已完成：石頭${rockCount}塊／草叢${bushCount}塊`;
+  renderShapeList();
+}
+
+function drawPolygon(points, fillStyle, strokeStyle, closeIt) {
+  ctx.fillStyle = fillStyle;
+  ctx.strokeStyle = strokeStyle;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  points.forEach((pt, i) => {
+    const c = toCanvas(pt.x, pt.y);
+    i === 0 ? ctx.moveTo(c.x, c.y) : ctx.lineTo(c.x, c.y);
+  });
+  if (closeIt) ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+}
+
+function renderShapeList() {
+  const list = document.getElementById('shapeList');
+  list.innerHTML = shapes.map((s, i) => `
+    <div>
+      <span>${s.type === 'bush' ? '🌿' : '🪨'} #${i + 1}（${s.points.length} 個點）</span>
+      <button onclick="deleteShape(${i})">刪除</button>
+    </div>
+  `).join('');
+}
+function deleteShape(i) { shapes.splice(i, 1); draw(); }
+
+function currentShapeType() {
+  return document.querySelector('input[name="shapeType"]:checked').value;
+}
+
+canvas.addEventListener('click', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const cx = (e.clientX - rect.left) * (canvas.width / rect.width);
+  const cy = (e.clientY - rect.top) * (canvas.height / rect.height);
+  const w = toWorld(cx, cy);
+  currentPoints.push(w);
+  draw();
+});
+canvas.addEventListener('mousemove', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const cx = (e.clientX - rect.left) * (canvas.width / rect.width);
+  const cy = (e.clientY - rect.top) * (canvas.height / rect.height);
+  const w = toWorld(cx, cy);
+  document.getElementById('mouseCoord').textContent = `世界座標: x=${w.x}, y=${w.y}`;
+});
+
+document.getElementById('btnLoadExisting').addEventListener('click', () => {
+  if (shapes.length > 0 && !confirm('目前畫面上已經有東西了，載入現有資料會加進去（不會清掉），確定繼續嗎？')) return;
+  referenceRocks.forEach(pts => shapes.push({ type: 'rock', points: pts }));
+  referenceBushes.forEach(pts => shapes.push({ type: 'bush', points: pts }));
+  referenceRocks.length = 0; // 清空參考底圖，避免跟剛剛載入進shapes的資料重複畫兩次
+  referenceBushes.length = 0;
+  document.querySelector('input[name="mirrorMode"][value="none"]').checked = true;
+  draw();
+  alert('已載入現有的石頭/草叢到可編輯清單，可以直接改/刪除了。\n\n⚠️ 鏡射模式已經自動切換成「不鏡射」，因為載入的資料本身就已經是完整的4份了，如果匯出時又選鏡射，會重複疊加、資料會壞掉。\n\n如果你只想保留其中1/4自己重新鏡射，要自己手動刪除多餘的3/4。');
+});
+document.getElementById('btnFinish').addEventListener('click', () => {
+  if (currentPoints.length < 3) { alert('至少要點3個點才能組成一塊形狀'); return; }
+  shapes.push({ type: currentShapeType(), points: currentPoints });
+  currentPoints = [];
+  draw();
+});
+document.getElementById('btnUndo').addEventListener('click', () => {
+  currentPoints.pop();
+  draw();
+});
+document.getElementById('btnCancelCurrent').addEventListener('click', () => {
+  currentPoints = [];
+  draw();
+});
+document.getElementById('btnDeleteLast').addEventListener('click', () => {
+  shapes.pop();
+  draw();
+});
+document.getElementById('btnClearAll').addEventListener('click', () => {
+  if (!confirm('確定要清空全部嗎？')) return;
+  shapes = [];
+  currentPoints = [];
+  draw();
+});
+document.getElementById('mirrorPreview').addEventListener('change', draw);
+document.querySelectorAll('input[name="mirrorMode"]').forEach(el => el.addEventListener('change', draw));
+
+document.getElementById('btnExport').addEventListener('click', () => {
+  const mode = currentMirrorMode();
+  function buildArray(typeName, varName) {
+    const seeds = shapes.filter(s => s.type === typeName).map(s => s.points.slice());
+    let list = [];
+    seeds.forEach(pts => {
+      list.push(pts);
+      mirrorVariants(pts, mode).forEach(v => list.push(v));
+    });
+    return `const ${varName} = [\n` +
+      list.map(pts => '  { points: [' + pts.map(p => `{ x: ${p.x}, y: ${p.y} }`).join(', ') + '] },').join('\n') +
+      '\n];';
+  }
+  document.getElementById('output').value =
+    buildArray('rock', 'MOBA_ROCKS') + '\n\n' + buildArray('bush', 'MOBA_BUSHES');
+});
+document.getElementById('btnLoad').addEventListener('click', () => {
+  const text = document.getElementById('output').value.trim();
+  if (!text) { alert('請先在下面的文字框貼上要載入的資料'); return; }
+  try {
+    shapes = [];
+    // 分別找出 MOBA_ROCKS 跟 MOBA_BUSHES 各自的區塊，裡面的 points 各自標記對應的類型
+    ['rock', 'bush'].forEach((type) => {
+      const varName = type === 'rock' ? 'MOBA_ROCKS' : 'MOBA_BUSHES';
+      const blockMatch = text.match(new RegExp(varName + '\\s*=\\s*\\[([\\s\\S]*?)\\n\\];'));
+      if (!blockMatch) return;
+      const matches = [...blockMatch[1].matchAll(/points:\s*\[([^\]]+)\]/g)];
+      matches.forEach((m) => {
+        const pts = [...m[1].matchAll(/\{\s*x:\s*(-?\d+),\s*y:\s*(-?\d+)\s*\}/g)];
+        shapes.push({ type, points: pts.map(p => ({ x: parseInt(p[1]), y: parseInt(p[2]) })) });
+      });
+    });
+    if (shapes.length === 0) throw new Error('找不到 MOBA_ROCKS 或 MOBA_BUSHES 資料');
+    currentPoints = [];
+    draw();
+    alert('載入成功，共 ' + shapes.length + ' 塊（如果你載入的是含鏡射的匯出結果，記得手動刪掉鏡射那一半，不然重新匯出時鏡射會疊加兩次）');
+  } catch (err) {
+    alert('載入失敗，格式看不懂：' + err.message);
+  }
+});
+
+draw();
+</script>
+</body>
+</html>

@@ -1,0 +1,586 @@
+:root {
+  --mint: #EAF7EE;
+  --mint-soft: #DFF4E6;
+  --coral: #FF6B81;
+  --coral-dark: #E8536A;
+  --sun: #FFC857;
+  --teal: #4FD1C5;
+  --ink: #2B3A3A;
+  --ink-soft: #5C6E6E;
+  --white: #FFFFFF;
+  --shadow: 0 10px 30px rgba(43, 58, 58, 0.12);
+  --radius-lg: 28px;
+  --radius-md: 18px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: 'Noto Sans TC', sans-serif;
+  color: var(--ink);
+  background: linear-gradient(180deg, #F3FBF5 0%, #E5F6EC 100%);
+  overflow-x: hidden;
+  position: relative;
+}
+
+.bg-blobs { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.blob { position: absolute; border-radius: 50%; filter: blur(2px); opacity: 0.35; }
+.blob-a { width: 260px; height: 260px; background: var(--sun); top: -80px; left: -60px; }
+.blob-b { width: 320px; height: 320px; background: var(--teal); bottom: -120px; right: -100px; }
+.blob-c { width: 180px; height: 180px; background: var(--coral); top: 40%; right: 10%; opacity: 0.18; }
+
+.screen { display: none; position: relative; z-index: 1; min-height: 100vh; padding: 24px; }
+.screen.active { display: flex; flex-direction: column; align-items: center; }
+
+.card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 32px;
+}
+
+.title {
+  font-family: 'ZCOOL KuaiLe', 'Noto Sans TC', sans-serif;
+  font-size: 34px;
+  color: var(--coral);
+  margin: 8px 0 0;
+  text-align: center;
+}
+.subtitle { color: var(--ink-soft); margin: 4px 0 20px; text-align: center; }
+
+/* ---------- Auth screen ---------- */
+.auth-card { width: 100%; max-width: 380px; margin-top: 6vh; display: flex; flex-direction: column; align-items: center; }
+.mascot { width: 96px; margin-bottom: 4px; }
+.mascot-svg { width: 100%; }
+
+.tabs { display: flex; gap: 8px; background: var(--mint-soft); border-radius: 999px; padding: 4px; margin-bottom: 20px; width: 100%; }
+.tab-btn, .period-btn, .diff-btn { flex: 1; border: none; background: transparent; padding: 10px 0; border-radius: 999px; font-weight: 700; font-family: inherit; color: var(--ink-soft); cursor: pointer; transition: all .2s; }
+.tab-btn.active, .period-btn.active, .diff-btn.active { background: var(--coral); color: white; box-shadow: 0 4px 10px rgba(255,107,129,.4); }
+
+.auth-form { width: 100%; display: flex; flex-direction: column; gap: 12px; }
+.auth-form.hidden { display: none; }
+
+input[type="text"], input[type="email"], input[type="password"] {
+  width: 100%; padding: 14px 16px; border-radius: var(--radius-md); border: 2px solid var(--mint-soft);
+  font-family: inherit; font-size: 15px; background: #FAFFFB; outline: none; transition: border-color .2s;
+}
+input:focus { border-color: var(--teal); }
+
+.btn {
+  border: none; border-radius: 999px; padding: 14px 20px; font-weight: 700; font-size: 15px;
+  font-family: 'Noto Sans TC', sans-serif; cursor: pointer; transition: transform .12s, box-shadow .12s;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary { background: var(--coral); color: white; box-shadow: 0 8px 18px rgba(255,107,129,.35); }
+.btn-primary:hover { background: var(--coral-dark); }
+.btn-secondary { background: var(--teal); color: white; box-shadow: 0 8px 18px rgba(79,209,197,.35); }
+.btn-ghost { background: transparent; color: var(--ink-soft); text-decoration: underline; box-shadow: none; padding: 10px; }
+.btn-lg { padding: 18px; font-size: 17px; }
+.btn.hidden { display: none; }
+
+.form-error { color: var(--coral-dark); font-size: 13px; min-height: 16px; margin: 0; }
+
+.divider { display: flex; align-items: center; width: 100%; color: var(--ink-soft); font-size: 12px; margin: 4px 0; }
+.divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--mint-soft); }
+.divider span { padding: 0 10px; }
+
+.btn-google {
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;
+  background: white; color: var(--ink); border: 2px solid var(--mint-soft);
+  box-shadow: none;
+}
+.btn-google:hover { border-color: var(--teal); }
+
+/* ---------- Topbar ---------- */
+.topbar { width: 100%; max-width: 900px; display: flex; justify-content: space-between; align-items: center; padding: 10px 4px 20px; }
+.brand { font-family: 'ZCOOL KuaiLe', sans-serif; font-size: 20px; color: var(--coral); }
+.test-mode-btn {
+  border: none; background: transparent; color: rgba(0,0,0,0.08); font-size: 9px;
+  cursor: default; padding: 2px 4px; vertical-align: middle; user-select: none;
+}
+.brand-emoji { margin-right: 4px; }
+.user-chip { display: flex; align-items: center; gap: 10px; background: white; padding: 8px 14px; border-radius: 999px; box-shadow: var(--shadow); font-weight: 700; }
+.link-btn { border: none; background: transparent; color: var(--ink-soft); text-decoration: underline; cursor: pointer; font-family: inherit; }
+.room-code { color: var(--coral); font-family: 'Baloo 2', sans-serif; letter-spacing: 4px; }
+
+/* ---------- Lobby ---------- */
+.lobby-grid { width: 100%; max-width: 900px; display: grid; grid-template-columns: 1fr 2fr; gap: 20px; }
+@media (max-width: 720px) { .lobby-grid { grid-template-columns: 1fr; } }
+
+.stat-card { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.stat-label { color: var(--ink-soft); font-size: 13px; margin-top: 10px; }
+.stat-value { font-family: 'Baloo 2', sans-serif; font-size: 40px; color: var(--sun); font-weight: 800; }
+.stat-value-sm { font-size: 24px; color: var(--teal); }
+
+.side-actions { width: 100%; display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+.side-actions .btn { padding: 10px; font-size: 13px; }
+
+.lobby-actions { display: flex; flex-direction: column; gap: 14px; }
+.lobby-actions h2 { margin: 0 0 4px; font-family: 'ZCOOL KuaiLe', sans-serif; color: var(--ink); }
+.join-row { display: flex; gap: 10px; }
+.join-row.hidden { display: none; }
+.join-row input { flex: 1; text-transform: uppercase; letter-spacing: 3px; text-align: center; font-family: 'Baloo 2', sans-serif; }
+.hint { color: var(--ink-soft); font-size: 13px; margin: 0; }
+
+.form-success { color: var(--teal); font-size: 13px; margin: 0; font-weight: 700; }
+.form-success.hidden { display: none; }
+.link-btn-small { border: none; background: transparent; color: var(--teal); text-decoration: underline; cursor: pointer; font-family: inherit; font-size: 13px; padding: 0; align-self: center; }
+
+.icon-btn { border: none; background: white; box-shadow: var(--shadow); border-radius: 999px; width: 34px; height: 34px; font-size: 15px; cursor: pointer; }
+
+.verify-email-banner {
+  width: 100%; max-width: 900px; margin: 0 auto 16px; background: #FFF3CD; color: #7A5A00;
+  padding: 10px 16px; border-radius: var(--radius-md); font-size: 13px; font-weight: 700; text-align: center;
+}
+.verify-email-banner.hidden { display: none; }
+
+.badge { background: var(--coral); color: white; font-size: 10px; padding: 1px 6px; border-radius: 999px; margin-left: 4px; }
+.badge.hidden { display: none; }
+
+/* 好友 / 戰績彈窗 */
+.social-subtitle { font-family: 'ZCOOL KuaiLe', sans-serif; font-size: 15px; margin: 16px 0 8px; color: var(--ink); }
+.social-subtitle.hidden { display: none; }
+.friend-search-row { display: flex; gap: 8px; }
+.friend-search-row input { flex: 1; padding: 10px 14px; border-radius: var(--radius-md); border: 2px solid var(--mint-soft); font-family: inherit; }
+.social-list { list-style: none; margin: 8px 0; padding: 0; display: flex; flex-direction: column; gap: 6px; max-height: 160px; overflow-y: auto; }
+.social-list li { display: flex; align-items: center; gap: 8px; background: var(--mint-soft); padding: 8px 12px; border-radius: var(--radius-md); font-size: 13px; font-weight: 700; }
+.social-list .social-empty { color: var(--ink-soft); font-weight: 400; background: none; padding: 4px 0; }
+.social-list .social-name { flex: 1; }
+.social-list button { border: none; border-radius: 999px; padding: 5px 10px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; }
+.social-list .btn-accept { background: var(--teal); color: white; }
+.social-list .btn-decline, .social-list .btn-remove, .social-list .btn-unblock { background: #E5E5E5; color: var(--ink); }
+.social-list .btn-add { background: var(--coral); color: white; }
+
+.stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 16px 0; }
+.stats-item { background: var(--mint-soft); border-radius: var(--radius-md); padding: 14px; text-align: center; }
+.stats-value { font-family: 'Baloo 2', sans-serif; font-size: 26px; font-weight: 800; color: var(--coral); }
+.stats-label { font-size: 12px; color: var(--ink-soft); margin-top: 4px; }
+
+/* 教學彈窗 */
+.tutorial-card { max-width: 460px; max-height: 85vh; overflow-y: auto; text-align: left; }
+.tutorial-section { margin-bottom: 14px; }
+.tutorial-section h3 { font-family: 'ZCOOL KuaiLe', sans-serif; font-size: 15px; margin: 0 0 4px; color: var(--coral); }
+.tutorial-section p { font-size: 13px; color: var(--ink); line-height: 1.6; margin: 2px 0; }
+.tutorial-checkbox { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-soft); margin: 12px 0; }
+
+/* 結算畫面的檢舉/封鎖/加好友小按鈕 */
+.rankings-list .player-actions { display: flex; gap: 4px; }
+.rankings-list .player-actions button {
+  border: none; background: #F0F0F0; border-radius: 6px; font-size: 11px; padding: 3px 6px; cursor: pointer;
+}
+
+.room-list-card { width: 100%; max-width: 900px; margin-top: 20px; }
+.room-list-card h2 { margin: 0 0 12px; font-family: 'ZCOOL KuaiLe', sans-serif; color: var(--ink); }
+.open-room-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; max-height: 280px; overflow-y: auto; }
+.open-room-list li { display: flex; align-items: center; gap: 12px; background: var(--mint-soft); padding: 10px 14px; border-radius: var(--radius-md); }
+.open-room-list .open-room-empty { color: var(--ink-soft); justify-content: center; font-size: 13px; }
+.open-room-mode { font-size: 12px; background: white; padding: 3px 10px; border-radius: 999px; font-weight: 700; flex-shrink: 0; }
+.open-room-info { flex: 1; font-weight: 700; font-size: 14px; }
+.open-room-info small { display: block; font-weight: 400; color: var(--ink-soft); font-size: 12px; }
+.open-room-join-btn { flex-shrink: 0; border: none; background: var(--coral); color: white; padding: 6px 16px; border-radius: 999px; font-weight: 700; font-size: 13px; cursor: pointer; }
+
+/* ---------- Room ---------- */
+.room-card { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 12px; align-items: stretch; }
+.room-card h2 { font-family: 'ZCOOL KuaiLe', sans-serif; margin: 0; }
+.player-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.player-list.hidden { display: none; }
+.player-list li { display: flex; align-items: center; gap: 10px; background: var(--mint-soft); padding: 10px 14px; border-radius: var(--radius-md); font-weight: 700; }
+.player-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
+.player-ready { margin-left: auto; font-size: 13px; color: var(--teal); }
+.player-host { font-size: 12px; background: var(--sun); color: white; padding: 2px 8px; border-radius: 999px; }
+.countdown { text-align: center; font-family: 'Baloo 2', sans-serif; font-size: 48px; color: var(--coral); }
+.countdown.hidden { display: none; }
+
+.bot-settings { background: var(--mint-soft); border-radius: var(--radius-md); padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.bot-settings.hidden { display: none; }
+.bot-settings-row { display: flex; align-items: center; justify-content: space-between; font-weight: 700; font-size: 14px; }
+.bot-settings-row .tabs { flex: 0 0 auto; width: auto; padding: 3px; }
+.bot-settings-row .diff-btn { padding: 6px 12px; font-size: 13px; }
+.stepper { display: flex; align-items: center; gap: 10px; }
+.stepper button {
+  width: 28px; height: 28px; border-radius: 50%; border: none; background: white; color: var(--coral);
+  font-weight: 800; font-size: 16px; box-shadow: 0 2px 6px rgba(0,0,0,.08); cursor: pointer;
+}
+.stepper span { font-family: 'Baloo 2', sans-serif; font-size: 18px; min-width: 20px; text-align: center; }
+.bot-settings.readonly { opacity: 0.65; pointer-events: none; }
+
+/* ---------- Game ---------- */
+#screen-game.active { align-items: center; }
+.game-hud { width: 100%; max-width: 600px; display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
+.hud-pill { background: white; padding: 8px 16px; border-radius: 999px; font-family: 'Baloo 2', sans-serif; font-weight: 700; box-shadow: var(--shadow); }
+.hud-pill.countdown-warning {
+  background: var(--coral); color: white;
+  animation: countdownPulse 1s ease-in-out infinite;
+}
+@keyframes countdownPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+}
+.score-list {
+  position: absolute; top: 10px; right: 10px; z-index: 4;
+  list-style: none; margin: 0; padding: 8px; max-width: 180px;
+  background: rgba(43,58,58,0.55); border-radius: 10px; border: 2px solid rgba(255,255,255,0.6);
+  display: flex; flex-direction: column; gap: 4px;
+}
+.score-list li { background: rgba(255,255,255,0.92); border-radius: 999px; padding: 4px 10px; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.score-list li.dead { opacity: 0.45; text-decoration: line-through; }
+.score-list li.score-me { background: var(--sun); box-shadow: 0 0 0 2px white inset; }
+.score-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+
+.canvas-wrap { position: relative; border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow); }
+#game-canvas { display: block; background: #12A8FF; max-width: 92vw; height: auto; }
+.game-message { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: rgba(43,58,58,.55); color: white; font-size: 24px; font-family: 'ZCOOL KuaiLe', sans-serif; }
+.game-message.hidden { display: none; }
+
+/* 全螢幕模式：整個遊戲畫面（HUD + 畫布 + 小地圖）填滿整個螢幕，canvas 用 JS 動態撐滿容器 */
+/* 全螢幕對象是整個網頁(document.documentElement)，不是#screen-game本身，所以這裡統一只認
+   .is-fullscreen這個class(由JS在fullscreenchange事件裡主動同步)，不用:fullscreen偽類別。 */
+#screen-game.is-fullscreen {
+  position: fixed; inset: 0; z-index: 1000;
+  width: 100%; height: 100%; max-width: none;
+  background: linear-gradient(180deg, #F3FBF5 0%, #E5F6EC 100%);
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+}
+#screen-game.is-fullscreen .canvas-wrap {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#screen-game.is-fullscreen #game-canvas {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+}
+
+.minimap {
+  position: absolute; left: 10px; top: 10px;
+  background: rgba(230,228,215,0.9); border-radius: 16px;
+  border: 2px solid rgba(255,255,255,0.6);
+}
+
+.spectator-hint {
+  position: absolute; left: 50%; top: 10px; transform: translateX(-50%);
+  background: rgba(43,58,58,0.7); color: white; font-size: 12px; font-weight: 700;
+  padding: 6px 14px; border-radius: 999px; pointer-events: none; white-space: nowrap;
+}
+.spectator-hint.hidden { display: none; }
+
+.update-banner {
+  position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
+  z-index: 2000; display: flex; align-items: center; gap: 14px;
+  background: white; padding: 12px 16px; border-radius: 999px;
+  box-shadow: 0 10px 30px rgba(43,58,58,.25); font-weight: 700; font-size: 14px;
+  animation: updateBannerIn .3s ease-out;
+}
+.update-banner .btn { padding: 8px 16px; font-size: 13px; }
+.update-banner.hidden { display: none; }
+@keyframes updateBannerIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.control-hint { color: var(--ink-soft); font-size: 13px; margin-top: 14px; text-align: center; }
+
+#screen-game.is-fullscreen .control-hint {
+  display: none;
+}
+
+.hud-btn { border: none; cursor: pointer; }
+.hud-pill.hidden { display: none; }
+
+.boost-btn {
+  display: none;
+  position: fixed; right: 20px; bottom: 20px; z-index: 5;
+  width: 76px; height: 76px; border-radius: 50%;
+  background: var(--coral); color: white; border: none;
+  font-weight: 800; font-size: 13px; line-height: 1.3;
+  box-shadow: 0 8px 20px rgba(255,107,129,.5);
+  touch-action: none; user-select: none;
+}
+.boost-btn:active { transform: scale(0.92); background: var(--coral-dark); }
+
+@media (max-width: 720px), (pointer: coarse) {
+  .boost-btn { display: block; }
+}
+.boost-btn.hidden { display: none !important; }
+
+.shoot-btn {
+  display: none;
+  position: fixed; right: 20px; bottom: 108px; z-index: 5;
+  width: 64px; height: 64px; border-radius: 50%;
+  background: var(--ink); color: white; border: none;
+  font-weight: 800; font-size: 11px; line-height: 1.3;
+  box-shadow: 0 8px 20px rgba(43,58,58,.5);
+  touch-action: none; user-select: none;
+}
+.shoot-btn:active { transform: scale(0.92); }
+.shoot-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+@media (max-width: 720px), (pointer: coarse) {
+  .shoot-btn { display: block; }
+}
+
+.joystick-base {
+  display: none;
+  position: fixed; left: 24px; bottom: 24px; z-index: 5;
+  width: 110px; height: 110px; border-radius: 50%;
+  background: rgba(43,58,58,0.35); border: 2px solid rgba(255,255,255,0.6);
+  touch-action: none;
+}
+.joystick-knob {
+  position: absolute; left: 50%; top: 50%; width: 52px; height: 52px;
+  margin-left: -26px; margin-top: -26px; border-radius: 50%;
+  background: rgba(255,255,255,0.9); box-shadow: 0 4px 10px rgba(0,0,0,.25);
+  transition: transform 0.05s linear;
+}
+@media (max-width: 720px), (pointer: coarse) {
+  .joystick-base { display: block; }
+}
+
+/* ---------- Modals ---------- */
+.modal { position: fixed; inset: 0; background: rgba(43,58,58,.5); display: flex; align-items: center; justify-content: center; z-index: 10; }
+.modal.hidden { display: none; }
+.modal-card { width: 90%; max-width: 380px; text-align: center; }
+.modal-card h2 { font-family: 'ZCOOL KuaiLe', sans-serif; margin-top: 0; }
+.rankings-list { text-align: left; list-style: none; padding: 0; margin: 16px 0; display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto; }
+.rankings-list li { display: flex; justify-content: space-between; background: var(--mint-soft); padding: 10px 14px; border-radius: var(--radius-md); font-weight: 700; }
+.rankings-list li:first-child { background: linear-gradient(90deg, #FFE3AC, #FFC857); }
+
+.mode-options { display: flex; flex-direction: column; gap: 12px; margin: 16px 0; }
+.mode-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  background: var(--mint-soft); border: 2px solid transparent; border-radius: var(--radius-md);
+  padding: 16px; cursor: pointer; font-family: inherit; text-align: center; transition: all .15s;
+}
+.mode-btn:hover { border-color: var(--teal); transform: translateY(-2px); }
+.mode-icon { font-size: 32px; }
+.mode-name { font-weight: 800; font-size: 16px; color: var(--ink); }
+.mode-desc { font-size: 12px; color: var(--ink-soft); line-height: 1.5; }
+
+.room-mode-badge {
+  display: inline-block; background: var(--sun); color: white; font-weight: 700; font-size: 12px;
+  padding: 4px 12px; border-radius: 999px; margin-bottom: 10px;
+}
+
+/* MOBA 雙隊列表 */
+.moba-team-panel { display: none; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+
+/* 房間頁面的操作說明 */
+.controls-help {
+  background: var(--mint-soft); border-radius: var(--radius-md); padding: 10px 14px; margin: 12px 0;
+  text-align: left;
+}
+.controls-help.hidden { display: none; }
+.controls-help h3 { margin: 0 0 6px; font-size: 14px; font-family: 'ZCOOL KuaiLe', sans-serif; }
+.controls-help ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.controls-help li { font-size: 12px; line-height: 1.5; }
+.moba-team-panel.hidden { display: none; }
+.moba-team-panel:not(.hidden) { display: grid; }
+.moba-team-col { border-radius: var(--radius-md); padding: 12px; }
+.moba-team-a { background: rgba(255,107,129,0.12); }
+.moba-team-b { background: rgba(58,176,255,0.12); }
+.moba-team-col h3 { margin: 0 0 8px; font-size: 14px; font-family: 'ZCOOL KuaiLe', sans-serif; }
+.moba-team-list { list-style: none; margin: 0 0 10px; padding: 0; display: flex; flex-direction: column; gap: 6px; min-height: 90px; }
+.moba-team-list li { background: white; border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+.moba-team-list li .lane-tag { font-size: 10px; color: var(--ink-soft); font-weight: 400; }
+.moba-join-btn { width: 100%; padding: 8px; font-size: 13px; }
+.moba-join-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* 升級選元素彈窗：改成右下角小視窗，不用整個畫面的modal遮罩 */
+.element-choice-corner {
+  position: absolute; right: 10px; bottom: 10px; z-index: 6;
+  background: rgba(43,58,58,0.85); border-radius: 12px; padding: 8px 10px; max-width: 220px;
+}
+.element-choice-corner.hidden { display: none; }
+.element-choice-corner-title { color: white; font-size: 11px; font-weight: 700; margin-bottom: 6px; text-align: center; }
+.element-choice-corner .element-options { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin: 0; }
+.element-choice-corner .element-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 0;
+  border: 2px solid transparent; border-radius: 8px; padding: 4px 2px;
+  cursor: pointer; font-family: inherit; background: var(--mint-soft); transition: transform .12s;
+}
+.element-choice-corner .element-btn:hover { transform: translateY(-2px); }
+.element-choice-corner .element-icon { font-size: 16px; }
+.element-choice-corner .element-name { font-weight: 800; font-family: 'ZCOOL KuaiLe', sans-serif; font-size: 10px; }
+
+/* 舊版彈窗用的元素按鈕樣式(shop等別的地方可能還用得到，保留) */
+.element-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  border: 3px solid transparent; border-radius: var(--radius-md); padding: 16px 8px;
+  cursor: pointer; font-family: inherit; background: var(--mint-soft); transition: transform .12s;
+}
+.element-btn:hover { transform: translateY(-2px); }
+.element-fire { background: #FFE3DB; } .element-fire:hover { border-color: #FF6B4A; }
+.element-water { background: #DCF3FF; } .element-water:hover { border-color: #3AB0FF; }
+.element-earth { background: #E9E0CE; } .element-earth:hover { border-color: #A6813F; }
+.element-wind { background: #E3F7E9; } .element-wind:hover { border-color: #4FD1C5; }
+.element-icon { font-size: 30px; }
+.element-name { font-weight: 800; font-family: 'ZCOOL KuaiLe', sans-serif; }
+.element-desc { font-size: 12px; color: var(--ink-soft); }
+
+/* MOBA 戰績按鈕+自己的KDA：放在canvas-wrap右上角，全螢幕也看得到 */
+.moba-scoreboard-corner {
+  position: absolute; right: 10px; top: 10px; z-index: 5;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 3px;
+}
+.moba-scoreboard-corner.hidden { display: none; }
+.moba-scoreboard-btn {
+  background: white; border: none; border-radius: 999px; padding: 6px 14px;
+  font-family: 'Baloo 2', sans-serif; font-weight: 700; font-size: 12px; box-shadow: var(--shadow); cursor: pointer;
+}
+.moba-my-kda {
+  background: rgba(43,58,58,0.75); color: white; font-size: 11px; font-weight: 700;
+  border-radius: 999px; padding: 3px 10px;
+}
+
+/* 生存/限時模式限定的道具使用按鈕：桌面版放canvas-wrap右下角，手機版固定在射擊按鈕正上方 */
+.powerup-use-btn {
+  position: absolute; right: 10px; bottom: 10px; z-index: 5;
+  background: var(--sun); border: none; border-radius: 999px; padding: 8px 16px;
+  font-family: 'Baloo 2', sans-serif; font-weight: 700; font-size: 13px; box-shadow: var(--shadow);
+  cursor: pointer; animation: powerup-pulse 1.6s ease-in-out infinite;
+}
+.powerup-use-btn.hidden { display: none; }
+@keyframes powerup-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+@media (max-width: 720px), (pointer: coarse) {
+  .powerup-use-btn {
+    position: fixed; right: 14px; bottom: 182px; left: auto;
+    padding: 8px 12px; font-size: 11px; max-width: 120px; text-align: center;
+  }
+}
+
+/* 解題加強彈窗 */
+.quiz-card { text-align: center; max-width: 460px; max-height: 82vh; overflow-y: auto; }
+#quiz-view-select.hidden, #quiz-view-play.hidden, #quiz-view-result.hidden { display: none; }
+#daily-view-intro.hidden, #daily-view-play.hidden, #daily-view-result.hidden { display: none; }
+
+.quiz-review-list { text-align: left; margin: 14px 0; display: flex; flex-direction: column; gap: 8px; }
+.quiz-review-title { font-weight: 800; font-family: 'ZCOOL KuaiLe', sans-serif; font-size: 14px; margin-bottom: 2px; }
+.quiz-review-item { border-radius: var(--radius-md); padding: 10px 12px; font-size: 12px; }
+.quiz-review-item.is-correct { background: #E3F7E9; }
+.quiz-review-item.is-wrong { background: #FFE3E3; }
+.quiz-review-q { font-weight: 700; margin-bottom: 4px; }
+.quiz-review-a { color: var(--ink-soft); }
+.quiz-review-a.correct-answer { color: #2E9E4F; font-weight: 700; }
+.quiz-powerup-list { display: flex; flex-direction: column; gap: 10px; margin: 14px 0; text-align: left; }
+.quiz-powerup-item {
+  display: flex; align-items: center; gap: 12px; background: var(--mint-soft);
+  border-radius: var(--radius-md); padding: 10px 14px; cursor: pointer; border: 2px solid transparent;
+  transition: transform .12s, border-color .12s;
+}
+.quiz-powerup-item:hover { transform: translateY(-1px); border-color: var(--coral); }
+.quiz-powerup-item .powerup-icon { font-size: 26px; }
+.quiz-powerup-item .powerup-info { flex: 1; }
+.quiz-powerup-item .powerup-info .powerup-name { font-weight: 800; font-family: 'ZCOOL KuaiLe', sans-serif; font-size: 15px; }
+.quiz-powerup-item .powerup-info .powerup-desc { font-size: 12px; color: var(--ink-soft); }
+.quiz-powerup-item .powerup-count { font-size: 12px; font-weight: 700; color: var(--coral); white-space: nowrap; }
+.backpack-use-btn { padding: 6px 14px; font-size: 12px; white-space: nowrap; }
+
+.quiz-progress { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.quiz-progress-bar { flex: 1; height: 8px; border-radius: 999px; background: var(--mint-soft); overflow: hidden; }
+.quiz-progress-fill { height: 100%; background: var(--coral); border-radius: 999px; transition: width .2s; }
+.quiz-category {
+  display: inline-block; background: var(--mint-soft); color: var(--ink-soft); font-size: 11px; font-weight: 700;
+  border-radius: 999px; padding: 3px 10px; margin-bottom: 6px;
+}
+.quiz-options { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+.quiz-option-btn {
+  background: var(--mint-soft); border: 2px solid transparent; border-radius: var(--radius-md);
+  padding: 12px 16px; font-family: inherit; font-size: 14px; font-weight: 700; text-align: left; cursor: pointer;
+  transition: transform .1s, border-color .1s;
+}
+.quiz-option-btn:hover { transform: translateY(-1px); border-color: var(--coral); }
+.quiz-option-btn.correct { background: #D4F7DC; border-color: #4CAF50; }
+.quiz-option-btn.wrong { background: #FFE0E0; border-color: #FF6B6B; }
+.quiz-option-btn:disabled { cursor: not-allowed; }
+
+/* MOBA 遊戲內 HUD：等級/血量/經驗值 */
+.moba-hud {
+  position: absolute; left: 10px; bottom: 10px; z-index: 4;
+  background: rgba(43,58,58,0.65); border-radius: 12px; padding: 8px 12px;
+  display: flex; flex-direction: column; gap: 5px; min-width: 140px;
+}
+.moba-hud.hidden { display: none; }
+.moba-hud-level { color: white; font-weight: 800; font-family: 'Baloo 2', sans-serif; font-size: 15px; }
+.moba-hud-bar-wrap { display: flex; align-items: center; gap: 6px; }
+.moba-hud-bar-label { color: white; font-size: 10px; font-weight: 700; width: 20px; }
+.moba-hud-bar { flex: 1; height: 8px; border-radius: 999px; background: rgba(255,255,255,0.25); overflow: hidden; }
+.moba-hud-bar-fill { height: 100%; border-radius: 999px; transition: width .2s; }
+.hp-bar .moba-hud-bar-fill { background: #FF6B81; }
+.xp-bar .moba-hud-bar-fill { background: #FFC857; }
+.moba-hud-elements { display: flex; gap: 3px; margin: 2px 0; }
+.moba-hud-elements .element-chip {
+  width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 10px; background: rgba(255,255,255,0.15);
+}
+.moba-hud-actions { display: flex; gap: 6px; margin-top: 2px; }
+.moba-action-chip {
+  flex: 1; text-align: center; border-radius: 8px; padding: 4px 6px; font-size: 11px; font-weight: 700;
+  background: rgba(255,255,255,0.15); color: white; transition: background .15s, opacity .15s;
+}
+.moba-action-chip.ready { background: rgba(79,209,197,0.55); }
+.moba-action-chip.cooling { opacity: 0.55; }
+.moba-key-hint { display: block; font-size: 9px; font-weight: 400; opacity: 0.75; }
+
+/* MOBA 戰績彈窗：兩隊左右分欄 */
+.moba-scoreboard-card { max-width: 480px; }
+.moba-scoreboard-card-wide { max-width: 680px; width: 94%; }
+.moba-team-score-row {
+  text-align: center; font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 32px;
+  margin: 8px 0 16px;
+}
+.team-score-a { color: #FF6B81; }
+.team-score-b { color: #3AB0FF; }
+.team-score-divider { color: var(--ink-soft); margin: 0 10px; }
+.moba-scoreboard-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.moba-scoreboard-col { display: flex; flex-direction: column; gap: 4px; text-align: left; }
+.moba-scoreboard-col-title { font-family: 'ZCOOL KuaiLe', sans-serif; font-weight: 700; font-size: 14px; margin-bottom: 2px; }
+.team-a-title { color: #FF6B81; } .team-b-title { color: #3AB0FF; }
+.moba-scoreboard-header, .moba-scoreboard-row {
+  display: grid; grid-template-columns: 1.3fr 0.4fr 0.8fr 1.4fr; gap: 4px; align-items: center;
+  padding: 5px 6px; font-size: 11px;
+}
+.moba-scoreboard-header { color: var(--ink-soft); font-weight: 700; font-size: 10px; }
+.moba-scoreboard-row { border-radius: 8px; font-weight: 700; }
+.moba-scoreboard-row.team-a { background: rgba(255,107,129,0.1); }
+.moba-scoreboard-row.team-b { background: rgba(58,176,255,0.1); }
+.moba-scoreboard-row .player-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.moba-scoreboard-row .element-mini { font-size: 10px; }
+.moba-scoreboard-row .synthesis-name { font-size: 9px; color: var(--ink-soft); font-weight: 400; display: block; }
+.moba-scoreboard-row .ultimate-name { font-size: 9px; font-weight: 700; display: block; }
+.moba-priority-btn {
+  margin-top: 4px; border: none; border-radius: 999px; padding: 5px 10px;
+  background: var(--coral); color: white; font-weight: 700; font-size: 11px; cursor: pointer;
+}
+.moba-priority-btn.priority-tower { background: var(--teal); }
+
+.coins-earned { text-align: center; color: var(--sun); font-weight: 800; font-size: 15px; }
+.coins-earned.hidden { display: none; }
+
+.shop-card { max-width: 440px; max-height: 85vh; overflow-y: auto; }
+.shop-balance { text-align: center; font-family: 'Baloo 2', sans-serif; font-size: 22px; color: var(--sun); font-weight: 800; margin-bottom: 6px; }
+.shop-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 14px 0; }
+.shop-item { display: flex; flex-direction: column; align-items: center; gap: 4px; background: var(--mint-soft); border-radius: var(--radius-md); padding: 10px 6px; }
+.shop-item canvas { display: block; }
+.shop-item-name { font-size: 12px; font-weight: 700; }
+.shop-item-price { font-size: 11px; color: var(--ink-soft); }
+.shop-item-btn {
+  border: none; border-radius: 999px; padding: 6px 10px; font-size: 11px; font-weight: 700;
+  cursor: pointer; width: 100%; font-family: inherit;
+}
+.shop-item-btn.buy { background: var(--coral); color: white; }
+.shop-item-btn.buy:disabled { background: #CBD5D5; cursor: not-allowed; }
+.shop-item-btn.equip { background: var(--teal); color: white; }
+.shop-item-btn.equipped { background: var(--sun); color: white; cursor: default; }
