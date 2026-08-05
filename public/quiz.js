@@ -6,6 +6,7 @@ const POWERUP_CATALOG_CLIENT = {
   free_boost_10s: { name: '加速不耗長度', desc: '啟動後10秒內，加速衝刺不會消耗身體長度', icon: '⚡', questionCount: 5 },
   revive_once: { name: '死亡保命', desc: '啟動後進入武裝狀態，下一次被殺會原地復活(保留一半長度)', icon: '❤️', questionCount: 8 },
   magnet: { name: '磁鐵吸引', desc: '啟動後8秒內，附近的食物會自動被吸過來', icon: '🧲', questionCount: 4 },
+  score_double: { name: '分數加倍', desc: '啟動後10秒內，吃到的東西分數變成2倍', icon: '✨', questionCount: 4 },
 };
 
 let myPowerupBag = []; // [{id, name, icon}] 背包，目前手上已經拿到、還沒用掉的道具，可以同時持有多個
@@ -107,7 +108,12 @@ socket.on('quiz_result', (result) => {
   } else {
     title.textContent = '😅 差一點點，再試一次吧';
   }
-  detail.textContent = `答對 ${result.correct} / ${result.total} 題（至少要對8成才能拿到道具）`;
+  let text = `答對 ${result.correct} / ${result.total} 題（至少要對8成才能拿到道具）`;
+  if (result.coinsEarned > 0) {
+    text += `，獲得 ${result.coinsEarned} 金幣`;
+    if (window.AppShop && result.coins != null) window.AppShop.coins = result.coins;
+  }
+  detail.textContent = text;
   renderQuizReview(result.history || []);
 });
 
@@ -138,8 +144,8 @@ function updatePowerupButton() {
     btn.classList.add('hidden');
   }
 }
-function renderBackpack() {
-  const list = document.getElementById('backpack-list');
+function renderBackpack(listElementId, interactive) {
+  const list = document.getElementById(listElementId);
   if (myPowerupBag.length === 0) {
     list.innerHTML = '<p class="hint">背包裡空空的，去解題加強拿一些道具吧！</p>';
     return;
@@ -150,9 +156,10 @@ function renderBackpack() {
       <div class="powerup-info">
         <div class="powerup-name">${p.name}</div>
       </div>
-      <button type="button" class="btn btn-primary backpack-use-btn" data-index="${i}">使用</button>
+      ${interactive ? `<button type="button" class="btn btn-primary backpack-use-btn" data-index="${i}">使用</button>` : ''}
     </div>
   `).join('');
+  if (!interactive) return;
   list.querySelectorAll('.backpack-use-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       const powerupId = myPowerupBag[parseInt(btn.dataset.index, 10)].id;
@@ -161,17 +168,25 @@ function renderBackpack() {
   });
 }
 document.getElementById('btn-use-powerup').addEventListener('click', () => {
-  renderBackpack();
+  renderBackpack('backpack-list', true);
   document.getElementById('modal-backpack').classList.remove('hidden');
 });
 document.getElementById('btn-close-backpack').addEventListener('click', () => {
   document.getElementById('modal-backpack').classList.add('hidden');
 });
+document.getElementById('btn-open-backpack-lobby').addEventListener('click', () => {
+  renderBackpack('backpack-list-lobby', false); // 大廳只能查看，不能直接使用道具(要在對局中才能用)
+  document.getElementById('modal-backpack-lobby').classList.remove('hidden');
+});
+document.getElementById('btn-close-backpack-lobby').addEventListener('click', () => {
+  document.getElementById('modal-backpack-lobby').classList.add('hidden');
+});
 socket.on('powerup_activated', ({ powerupId }) => {
   const idx = myPowerupBag.findIndex((p) => p.id === powerupId);
   if (idx !== -1) myPowerupBag.splice(idx, 1);
   updatePowerupButton();
-  renderBackpack();
+  // 選完立刻關閉彈窗：彈窗是蓋滿全畫面的浮層，開著的話滑鼠事件會被它擋住，蛇沒辦法被滑鼠控制
+  document.getElementById('modal-backpack').classList.add('hidden');
   SoundFx.superEat(); // 借用升級音效，聽起來像是有東西生效了
 });
 socket.on('my_powerup_status', (data) => {
@@ -261,8 +276,12 @@ socket.on('daily_checkin_result', (result) => {
   setTimeout(() => {
     showDailyView('result');
     document.getElementById('daily-result-title').textContent = result.correct ? '🎉 答對了！' : '😅 答錯了，明天再試一次';
-    document.getElementById('daily-result-detail').textContent = result.correct
+    let detail = result.correct
       ? `獲得 ${result.coinsEarned} 金幣（目前共 ${result.coins} 枚）` : '今天已經算簽到過了，明天再來挑戰。';
+    detail += `\n🔥 連續簽到 ${result.streak} 天`;
+    if (result.milestoneBonus > 0) detail += `，滿7天額外獎勵 +${result.milestoneBonus} 金幣！`;
+    document.getElementById('daily-result-detail').style.whiteSpace = 'pre-line';
+    document.getElementById('daily-result-detail').textContent = detail;
     document.getElementById('daily-checkin-badge').classList.add('hidden');
     if (window.AppShop) window.AppShop.coins = result.coins;
   }, 900);

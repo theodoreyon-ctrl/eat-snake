@@ -506,8 +506,8 @@ socket.on('room_update', (room) => {
   }
 });
 
-document.getElementById('btn-toggle-ready').addEventListener('click', () => { socket.emit('toggle_ready'); tryEnterFullscreen(); });
-document.getElementById('btn-start-game').addEventListener('click', () => { socket.emit('start_game'); tryEnterFullscreen(); });
+document.getElementById('btn-toggle-ready').addEventListener('click', () => socket.emit('toggle_ready'));
+document.getElementById('btn-start-game').addEventListener('click', () => socket.emit('start_game'));
 
 // ---------- 電腦對手設定（只有房主的操作會真的送出去，非房主畫面是唯讀的） ----------
 let currentMaxBotCount = 0;
@@ -790,25 +790,25 @@ shootBtn.addEventListener('pointerdown', (e) => {
 shootBtn.addEventListener('dblclick', (e) => e.preventDefault());
 boostBtn.addEventListener('dblclick', (e) => e.preventDefault());
 
-// ---------- 全螢幕按鈕（全螢幕的是整個遊戲畫面區塊，不是整個網頁） ----------
-const gameScreenEl = document.getElementById('screen-game');
+// ---------- 全螢幕按鈕（全螢幕的是整個網頁，狀態統一記在body上，不綁定特定畫面） ----------
 const fullscreenBtn = document.getElementById('btn-fullscreen');
 
 async function tryEnterFullscreen() {
   const isFs = document.fullscreenElement || document.webkitFullscreenElement;
   if (isFs) return;
-  // 全螢幕的對象改成整個網頁(document.documentElement)，不要只對#screen-game，
-  // 不然像背包這種彈窗、或是遊戲還沒開始、畫面還在房間頁面時，都會因為#screen-game本身
-  // 還沒顯示或彈窗不在裡面而出問題。整個網頁進全螢幕，裡面不管長怎樣都不受影響。
-  const target = document.documentElement;
+  // 全螢幕對象是 #screen-game 本身，不是整個網頁：曾經試過對整個網頁(documentElement)要求全螢幕，
+  // 想解決彈窗在全螢幕裡看不到的問題，但那個改動本身反而導致全螢幕整個失效(不同瀏覽器/環境對
+  // 網頁根節點要求全螢幕的支援度不一致)。彈窗的可見性問題改用「把彈窗搬進 canvas-wrap 裡面」解決，
+  // 不用再靠改全螢幕對象這種更大範圍、風險更高的方式。
+  const target = document.getElementById('screen-game');
   try {
     if (target.requestFullscreen) await target.requestFullscreen();
     else if (target.webkitRequestFullscreen) target.webkitRequestFullscreen();
-    else gameScreenEl.classList.add('is-fullscreen'); // 不支援全螢幕API的瀏覽器，退回用CSS模擬
+    else document.body.classList.add('is-fullscreen'); // 不支援全螢幕API的瀏覽器，退回用CSS模擬
   } catch (e) {
     // 瀏覽器支援全螢幕API、但實際呼叫失敗(常見於不是直接來自使用者手勢的情況)，
     // 一定要退回CSS模擬全螢幕，不然畫面會卡在小尺寸、旁邊露出底色。
-    gameScreenEl.classList.add('is-fullscreen');
+    document.body.classList.add('is-fullscreen');
   }
   // 手機上順便鎖定橫向，桌機沒有screen.orientation.lock或會被瀏覽器拒絕都沒關係，安靜失敗即可
   if (screen.orientation && screen.orientation.lock) {
@@ -827,7 +827,7 @@ fullscreenBtn.addEventListener('click', async () => {
     } else {
       if (document.exitFullscreen) await document.exitFullscreen();
       else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-      else gameScreenEl.classList.remove('is-fullscreen');
+      else document.body.classList.remove('is-fullscreen');
     }
   } catch (e) {
     // 部分瀏覽器（例如某些版本的 iOS Safari）不支援全螢幕 API，安靜地失敗即可
@@ -840,7 +840,7 @@ function onFullscreenChange() {
   // 不管是真的全螢幕API成功、還是CSS模擬，統一都用.is-fullscreen這個class來驅動版面樣式，
   // 全螢幕對象現在是整個網頁，#screen-game本身不會有:fullscreen這個偽類別可以用了，
   // 所以改成用JS主動同步這個class，畫面版面的CSS規則全部只認這個class，不認:fullscreen偽類別。
-  gameScreenEl.classList.toggle('is-fullscreen', isFs);
+  document.body.classList.toggle('is-fullscreen', isFs);
   // 手機進出全螢幕常常有版面轉換動畫（網址列收合等），量測太早容易抓到過渡中的錯誤尺寸，
   // 這裡量兩次：快的那次先讓畫面不要空白，晚一點再校正一次確保最終尺寸正確。
   setTimeout(resizeCanvas, 100);
@@ -851,7 +851,7 @@ document.addEventListener('webkitfullscreenchange', onFullscreenChange);
 
 // ---------- 讓 canvas 的實際繪圖解析度跟著容器大小走（全螢幕時才能真的看到更大範圍，而不是被拉伸放大） ----------
 function isInFullscreen() {
-  return !!(document.fullscreenElement || document.webkitFullscreenElement || gameScreenEl.classList.contains('is-fullscreen'));
+  return !!(document.fullscreenElement || document.webkitFullscreenElement || document.body.classList.contains('is-fullscreen'));
 }
 
 function resizeCanvas() {
@@ -1639,7 +1639,7 @@ socket.on('moba_game_over', ({ winner }) => {
     if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
     else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
   }
-  document.getElementById('screen-game').classList.remove('is-fullscreen');
+  document.body.classList.remove('is-fullscreen');
   document.getElementById('btn-fullscreen').textContent = '⛶ 全螢幕';
 
   const teamLabel = winner === 'A' ? '🔴 A 隊' : '🔵 B 隊';
@@ -1658,7 +1658,7 @@ socket.on('game_over', ({ rankings, mode }) => {
     if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
     else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
   }
-  document.getElementById('screen-game').classList.remove('is-fullscreen');
+  document.body.classList.remove('is-fullscreen');
   document.getElementById('btn-fullscreen').textContent = '⛶ 全螢幕';
 
   const isTimed = mode === 'timed';

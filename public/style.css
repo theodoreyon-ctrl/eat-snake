@@ -114,8 +114,8 @@ input:focus { border-color: var(--teal); }
 .stat-value { font-family: 'Baloo 2', sans-serif; font-size: 40px; color: var(--sun); font-weight: 800; }
 .stat-value-sm { font-size: 24px; color: var(--teal); }
 
-.side-actions { width: 100%; display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
-.side-actions .btn { padding: 10px; font-size: 13px; }
+.side-actions { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px; }
+.side-actions .btn { padding: 10px 6px; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .lobby-actions { display: flex; flex-direction: column; gap: 14px; }
 .lobby-actions h2 { margin: 0 0 4px; font-family: 'ZCOOL KuaiLe', sans-serif; color: var(--ink); }
@@ -238,7 +238,7 @@ input:focus { border-color: var(--teal); }
 /* 全螢幕模式：整個遊戲畫面（HUD + 畫布 + 小地圖）填滿整個螢幕，canvas 用 JS 動態撐滿容器 */
 /* 全螢幕對象是整個網頁(document.documentElement)，不是#screen-game本身，所以這裡統一只認
    .is-fullscreen這個class(由JS在fullscreenchange事件裡主動同步)，不用:fullscreen偽類別。 */
-#screen-game.is-fullscreen {
+body.is-fullscreen #screen-game {
   position: fixed; inset: 0; z-index: 1000;
   width: 100%; height: 100%; max-width: none;
   background: linear-gradient(180deg, #F3FBF5 0%, #E5F6EC 100%);
@@ -246,7 +246,7 @@ input:focus { border-color: var(--teal); }
   padding: 16px;
   box-sizing: border-box;
 }
-#screen-game.is-fullscreen .canvas-wrap {
+body.is-fullscreen #screen-game .canvas-wrap {
   flex: 1;
   width: 100%;
   min-height: 0;
@@ -254,7 +254,7 @@ input:focus { border-color: var(--teal); }
   align-items: center;
   justify-content: center;
 }
-#screen-game.is-fullscreen #game-canvas {
+body.is-fullscreen #screen-game #game-canvas {
   max-width: 100%;
   max-height: 100%;
   width: auto;
@@ -290,7 +290,7 @@ input:focus { border-color: var(--teal); }
 
 .control-hint { color: var(--ink-soft); font-size: 13px; margin-top: 14px; text-align: center; }
 
-#screen-game.is-fullscreen .control-hint {
+body.is-fullscreen #screen-game .control-hint {
   display: none;
 }
 
@@ -347,7 +347,7 @@ input:focus { border-color: var(--teal); }
 }
 
 /* ---------- Modals ---------- */
-.modal { position: fixed; inset: 0; background: rgba(43,58,58,.5); display: flex; align-items: center; justify-content: center; z-index: 10; }
+.modal { position: fixed; inset: 0; background: rgba(43,58,58,.5); display: flex; align-items: center; justify-content: center; z-index: 2000; }
 .modal.hidden { display: none; }
 .modal-card { width: 90%; max-width: 380px; text-align: center; }
 .modal-card h2 { font-family: 'ZCOOL KuaiLe', sans-serif; margin-top: 0; }
